@@ -54,8 +54,26 @@ threshold <- 25
 # and add the first 9 rows back to the data
 ECfinal <- rbind(ECcom[1:2, ], ECcom[3:nrow(ECcom), ][narow <= threshold, ])
 
+# Convert dates to Date objects
+ECfinal$child_bday <- as.Date(ECfinal$child_bday, format="%m/%d/%Y") # adjust format as needed
+ECfinal$RecordedDate<- as.Date(ECfinal$RecordedDate, format="%m/%d/%Y") # adjust format as needed
+# Calculate age in years
+ECfinal$Age <- as.numeric(difftime(ECfinal$RecordedDate, ECfinal$child_bday, units="days")) / 365.25
+ECfinal$Age <- round(ECfinal$Age,0)
 
-write.csv(ECfinal, "ECfinal.csv", row.names = FALSE)
+ECfinal<- ECfinal[!(ECfinal$Age > 6 | ECfinal$Age < 3), ]
+#com01 <- com2[(com2$Age > 6 | com2$Age < 3), ]
+
+
+file_path <- "ECfinal.csv"
+# Check if the file exists and delete it if it does
+if (file.exists(file_path)) {
+  file.remove(file_path)
+}
+# Write the ECfinal data frame to a CSV file without row names
+write.csv(ECfinal, file = file_path, row.names = FALSE)
+
+
 
 
 ```
@@ -81,6 +99,7 @@ CC6<- select(C6, -Age, -Gender)
 CC2<- select(C2, -SignedConsent, -ipad, -Printedconsent)
 #combined measurements
 cmeasure <- rbind(CC1, CC2, CC3, CC4, CC5, CC6)
+
 write.csv(cmeasure, "cmeasure.csv", row.names = FALSE)
 
 

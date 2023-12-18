@@ -15,6 +15,7 @@ library(dplyr)
 ```{r}
 #Data ditioinary surveys
 
+
 # Removing the first 30 columns from ECfinal to remove questions  before starting the survey questions ,
 # Removing childs bith to count and crate data dictionary , we can not use insertion type data(Such as date, and Birth date in our survey)
 # Removing random ID and Date and time diff,
@@ -79,6 +80,105 @@ com1 <- com1 %>%
                                                ifelse(Var1 == "$20,000 - $39,999", 2,
                                                      ifelse(Var1 == "Less than $20,000", 1,Numeric)))))))
 write.csv(com1, "comm.csv", row.names = FALSE)
+```
+
+
+```{r}
+# Part2 data dictionary: Continue Data dictionary,
+# Define the mapping from text responses to numeric values
+EClist <- c("Always" = 5, "Often" = 4, "Sometimes" =3 , "Rarely" = 2, "Never" = 1 )
+
+# List the question columns for each category based on the names you provided
+control_questions <- c("PFSQ5", "PFSQ17", "PFSQ18", "PFSQ20", "PFSQ24", "PFSQ26")
+emotional_questions <- c("PFSQ25", "PFSQ21", "PFSQ22", "PFSQ15", "PFSQ13", "PFSQ2")
+picky_questions <- c("CEBQ32", "CEBQ24", "CEBQ16", "CEBQ10", "CEBQ7")
+
+# Convert text responses to numeric values and calculate mean scores for control, emotional eating, and picky eating
+com2<- ECfinal %>%
+  mutate(
+    across(all_of(control_questions), ~ as.numeric(EClist[.x]), .names = "numeric_{.col}"),
+    across(all_of(emotional_questions), ~ as.numeric(EClist[.x]), .names = "numeric_{.col}"),
+    across(all_of(picky_questions), ~ as.numeric(EClist[.x]), .names = "numeric_{.col}")
+  ) %>%
+  rowwise() %>%
+  mutate(
+    Control_Score = mean(c_across(starts_with("numeric_PFSQ")), na.rm = TRUE),
+    Emotional_Score = mean(c_across(starts_with("numeric_PFSQ")), na.rm = TRUE),
+    Picky_Score = mean(c_across(starts_with("numeric_CEBQ")), na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+
+
+##############
+
+# Calculate statistics for each category
+#control
+control_stats <- com2 %>%
+  summarise(
+    Control_Mean = mean(Control_Score, na.rm = TRUE),
+    Control_Median = median(Control_Score, na.rm = TRUE),
+    Control_Min = min(Control_Score, na.rm = TRUE),
+    Control_SD = sd(Control_Score, na.rm = TRUE)
+  )
+#emotional
+emotional_stats <- com2 %>%
+  summarise(
+    Emotional_Mean = mean(Emotional_Score, na.rm = TRUE),
+    Emotional_Median = median(Emotional_Score, na.rm = TRUE),
+    Emotional_Min = min(Emotional_Score, na.rm = TRUE),
+    Emotional_SD = sd(Emotional_Score, na.rm = TRUE)
+  )
+#picky eating
+picky_stats <- com2 %>%
+  summarise(
+    Picky_Mean = mean(Picky_Score, na.rm = TRUE),
+    Picky_Median = median(Picky_Score, na.rm = TRUE),
+    Picky_Min = min(Picky_Score, na.rm = TRUE),
+    Picky_SD = sd(Picky_Score, na.rm = TRUE)
+  )
+
+# Calculate statistics for each question
+question_stats <- function(questions) {
+  stats <- lapply(questions, function(question) {
+    question_data <- com2[[paste0("numeric_", question)]]
+    list(
+      Mean = mean(question_data, na.rm = TRUE),
+      Median = median(question_data, na.rm = TRUE),
+      Min = min(question_data, na.rm = TRUE),
+      SD = sd(question_data, na.rm = TRUE)
+    )
+  })
+  names(stats) <- questions
+  return(stats)
+}
+
+control_question_stats <- question_stats(control_questions)
+emotional_question_stats <- question_stats(emotional_questions)
+picky_question_stats <- question_stats(picky_questions)
+
+
+
+
+
+
+
+
+
+
+#Calculate statistics for Age
+control_Age <- com2 %>%
+  summarise(
+    Age_Mean = mean(Age, na.rm = TRUE),
+    Age_Median = median(Age, na.rm = TRUE),
+    Age_Min = min(Age, na.rm = TRUE),
+    Age_SD = sd(Age, na.rm = TRUE)
+  )
+
+
+
+
+
 ```
 
 
