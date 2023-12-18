@@ -65,7 +65,19 @@ generaterandom <- function(n) {
 
 # Apply the function to each subset of the data frame (for each Question)
 com1$Numeric<- ave(rep(NA, nrow(com1)), com1$Question, FUN = function(x) generaterandom(length(x)))
-
+com1 <- com1 %>%
+  mutate(Numeric = ifelse(Var1 == "Always", 5,
+                          ifelse(Var1 == "Often", 4,
+                                 ifelse(Var1 == "Sometimes", 3,
+                                        ifelse(Var1 == "Rarely", 2,
+                                               ifelse(Var1 == "Never", 1, Numeric))))))
+com1 <- com1 %>%
+  mutate(Numeric = ifelse(Var1 == "More than $100,000", 6,
+                          ifelse(Var1 == "$75,000 - $99,999", 5,
+                                 ifelse(Var1 == "$50,000 - $74,999", 4,
+                                        ifelse(Var1 == "$40,000 - $49,999", 3,
+                                               ifelse(Var1 == "$20,000 - $39,999", 2,
+                                                     ifelse(Var1 == "Less than $20,000", 1,Numeric)))))))
 write.csv(com1, "comm.csv", row.names = FALSE)
 ```
 
