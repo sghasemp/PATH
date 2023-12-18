@@ -6,15 +6,16 @@ date: "2023-12-17"
 ```{r}
 #Library
 library(dplyr)
-
+rm(list = ls())
+cat("\014")  # Clears the console
+#Data ditioinary surveys
+ECfinal<- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/DataCleaning/ECfinal.csv")
 ```
 
 
 
 
 ```{r}
-#Data ditioinary surveys
-
 
 # Removing the first 30 columns from ECfinal to remove questions  before starting the survey questions ,
 # Removing childs bith to count and crate data dictionary , we can not use insertion type data(Such as date, and Birth date in our survey)
@@ -54,7 +55,6 @@ for (question_abbr in names(ECfinald)) {
 }
 #design the order of columns based on  head of questions, questions, 
 com1<- com[,c(3,4,1,2)]
-
 
 # Set seed for reproducibility
 set.seed(123)  
@@ -96,10 +96,10 @@ picky_questions <- c("CEBQ32", "CEBQ24", "CEBQ16", "CEBQ10", "CEBQ7")
 # Convert text responses to numeric values and calculate mean scores for control, emotional eating, and picky eating
 com2<- ECfinal %>%
   mutate(
-    across(all_of(control_questions), ~ as.numeric(EClist[.x]), .names = "numeric_{.col}"),
+   across(all_of(control_questions), ~ as.numeric(EClist[.x]), .names = "numeric_{.col}"),
     across(all_of(emotional_questions), ~ as.numeric(EClist[.x]), .names = "numeric_{.col}"),
-    across(all_of(picky_questions), ~ as.numeric(EClist[.x]), .names = "numeric_{.col}")
-  ) %>%
+   across(all_of(picky_questions), ~ as.numeric(EClist[.x]), .names = "numeric_{.col}")
+ ) %>%
   rowwise() %>%
   mutate(
     Control_Score = mean(c_across(starts_with("numeric_PFSQ")), na.rm = TRUE),
@@ -116,26 +116,26 @@ com2<- ECfinal %>%
 #control
 control_stats <- com2 %>%
   summarise(
-    Control_Mean = mean(Control_Score, na.rm = TRUE),
-    Control_Median = median(Control_Score, na.rm = TRUE),
-    Control_Min = min(Control_Score, na.rm = TRUE),
-    Control_SD = sd(Control_Score, na.rm = TRUE)
+    Mean = mean(Control_Score, na.rm = TRUE),
+    Median = median(Control_Score, na.rm = TRUE),
+    Min = min(Control_Score, na.rm = TRUE),
+    SD = sd(Control_Score, na.rm = TRUE)
   )
 #emotional
 emotional_stats <- com2 %>%
   summarise(
-    Emotional_Mean = mean(Emotional_Score, na.rm = TRUE),
-    Emotional_Median = median(Emotional_Score, na.rm = TRUE),
-    Emotional_Min = min(Emotional_Score, na.rm = TRUE),
-    Emotional_SD = sd(Emotional_Score, na.rm = TRUE)
+    Mean = mean(Emotional_Score, na.rm = TRUE),
+    Median = median(Emotional_Score, na.rm = TRUE),
+    Min = min(Emotional_Score, na.rm = TRUE),
+    SD = sd(Emotional_Score, na.rm = TRUE)
   )
 #picky eating
 picky_stats <- com2 %>%
   summarise(
-    Picky_Mean = mean(Picky_Score, na.rm = TRUE),
-    Picky_Median = median(Picky_Score, na.rm = TRUE),
-    Picky_Min = min(Picky_Score, na.rm = TRUE),
-    Picky_SD = sd(Picky_Score, na.rm = TRUE)
+    Mean = mean(Picky_Score, na.rm = TRUE),
+    Median = median(Picky_Score, na.rm = TRUE),
+    Min = min(Picky_Score, na.rm = TRUE),
+    SD = sd(Picky_Score, na.rm = TRUE)
   )
 
 # Calculate statistics for each question
@@ -158,37 +158,73 @@ emotional_question_stats <- question_stats(emotional_questions)
 picky_question_stats <- question_stats(picky_questions)
 
 
-
-
-
-
-
-
-
-
 #Calculate statistics for Age
 control_Age <- com2 %>%
   summarise(
-    Age_Mean = mean(Age, na.rm = TRUE),
-    Age_Median = median(Age, na.rm = TRUE),
-    Age_Min = min(Age, na.rm = TRUE),
-    Age_SD = sd(Age, na.rm = TRUE)
+    Mean = mean(Age, na.rm = TRUE),
+    Median = median(Age, na.rm = TRUE),
+    Min = min(Age, na.rm = TRUE),
+    SD = sd(Age, na.rm = TRUE)
   )
 
 
+# Create a nested list
+Surveys_CEP_stats <- list(control_question_stats = control_question_stats, emotional_question_stats=
+                      emotional_question_stats,picky_question_stats=picky_question_stats)
+Surveys_CEP_stats$control_Age<-control_Age
+Surveys_CEP_stats$control_stats<-control_stats
+Surveys_CEP_stats$emotional_stats<-emotional_stats
+Surveys_CEP_stats$picky_stats<-picky_stats
 
+
+
+write.csv(Surveys_CEP_stats, "Surveys_CEP_stats.csv", row.names = FALSE)
 
 
 ```
 
+```{r}
+# Create a data frame
+A <- data.frame(
+  Mean = numeric(),
+  Median = numeric(),
+  Min = numeric(),
+  SD = numeric(),
+  stringsAsFactors = FALSE
+)
+df<- data.frame(Surveys_CEP_stats)
+# Assuming SurveysCEPstats is your data frame
+ind <- grepl("Mean$", names(df))
+a<-(df[1,ind])
+A[1:length(df[1,ind]), "Mean"] <- t(df[1,ind])
 
+ind <- grepl("Median$", names(df))
+A[1:length(df[1,ind]), "Median"] <- t(df[1,ind])
+
+ind <- grepl("Min$", names(df))
+A[1:length(df[1,ind]), "Min"] <- t(df[1,ind])
+
+ind <- grepl("SD$", names(df))
+A[1:length(df[1,ind]), "SD"] <- t(df[1,ind])
+
+# Add identifiers
+identifiers <- c("PFSQ5","PFSQ17", "PFSQ18","PFSQ20", "PFSQ24", "PFSQ26", "PFSQ25",  "PFSQ21",  "PFSQ22", "PFSQ15", "PFSQ13","PFSQ2","CEBQ32","CEBQ24","CEBQ16","CEBQ10","CEBQ7","control_Age","control_stats","emotional_stats","picky_stats")
+A$Question <- identifiers
+Survey<- A[,c(5,1:4)]
+# Write the data frame to a CSV file
+write.csv(A, file = "Survey.csv", row.names = FALSE)
+```
+
+```{r}
+install.packages("datadictionary")
+library(datadictionary)
+
+```
 
 
 ```{r}
 # data dictionary for measuring data
-
-install.packages("datadictionary")
-library(datadictionary)
+cmeasure<- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/DataCleaning/cmeasure.csv")
 
 dm<- create_dictionary(cmeasure)
 write.csv(dm, "dm.csv", row.names = FALSE)

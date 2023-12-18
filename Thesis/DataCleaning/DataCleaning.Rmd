@@ -61,7 +61,15 @@ ECfinal$RecordedDate<- as.Date(ECfinal$RecordedDate, format="%m/%d/%Y") # adjust
 ECfinal$Age <- as.numeric(difftime(ECfinal$RecordedDate, ECfinal$child_bday, units="days")) / 365.25
 ECfinal$Age <- round(ECfinal$Age,0)
 
-ECfinal<- ECfinal[!(ECfinal$Age > 6 | ECfinal$Age < 3), ]
+
+
+```
+
+
+```{r}
+ECfinal <- ECfinal[(!(ECfinal$Age > 6 | ECfinal$Age < 3)| is.na(ECfinal$Age)), ]
+
+
 #com01 <- com2[(com2$Age > 6 | com2$Age < 3), ]
 
 
