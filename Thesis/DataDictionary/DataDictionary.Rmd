@@ -243,9 +243,6 @@ control_household <- com2 %>%
     SD = sd(household, na.rm = TRUE)
   )
 
-mean(com2$household, na.rm = TRUE)
-print(com2$household)
-
 
 
 
@@ -267,6 +264,7 @@ Surveys_CEP_stats$emotional_stats<-emotional_stats
 Surveys_CEP_stats$picky_stats<-picky_stats
 Surveys_CEP_stats$income_stats<-income_stats
 Surveys_CEP_stats$education_stats<-education_stats
+Surveys_CEP_stats$control_household<-control_household
 
 # Create a data frame
 A <- data.frame(
@@ -292,11 +290,12 @@ ind <- grepl("SD$", names(df))
 A[1:length(df[1,ind]), "SD"] <- t(df[1,ind])
 
 # Add identifiers
-identifiers <- c("PFSQ5","PFSQ17", "PFSQ18","PFSQ20", "PFSQ24", "PFSQ26", "PFSQ25",  "PFSQ21",  "PFSQ22", "PFSQ15", "PFSQ13","PFSQ2","CEBQ32","CEBQ24","CEBQ16","CEBQ10","CEBQ7","control_Age","control_stats","emotional_stats","picky_stats","income_stats","education_stats")
+identifiers <- c("PFSQ5","PFSQ17", "PFSQ18","PFSQ20", "PFSQ24", "PFSQ26", "PFSQ25",  "PFSQ21",  "PFSQ22", "PFSQ15", "PFSQ13","PFSQ2","CEBQ32","CEBQ24","CEBQ16","CEBQ10","CEBQ7","control_Age","control_stats","emotional_stats","picky_stats","income_stats","education_stats","control_household")
 A$Question <- identifiers
 Survey<- A[,c(5,1:4)]
 # Write the data frame to a CSV file
 write.csv(Survey, file = "DataDictionarySheet2.csv", row.names = FALSE)
+
 ```
 
 Sheet3 Data dictionary for measurement calculation
