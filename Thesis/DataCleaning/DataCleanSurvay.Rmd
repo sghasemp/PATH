@@ -1,0 +1,89 @@
+---
+title: "Data cleaning"
+output: html_document
+date: "2023-12-17"
+---
+
+```{r}
+#Library
+library(dplyr)
+#read date
+
+dataset <- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/EC_pre.csv")
+dataset2<- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/EC.csv")
+
+
+```
+
+
+
+```{r }
+#Data Cleaning survey
+#Converting Date Columns
+dataset$StartDate <- as.POSIXct(dataset$StartDate, format = "%m/%d/%Y %H:%M")
+dataset$EndDate<- as.POSIXct(dataset$EndDate, format = "%m/%d/%Y %H:%M")
+dataset2$StartDate <- as.POSIXct(dataset2$StartDate, format = "%m/%d/%Y %H:%M")
+dataset2$EndDate<- as.POSIXct(dataset2$EndDate, format = "%m/%d/%Y %H:%M")
+
+
+# Define cutoff date 
+cutoff_date <- as.POSIXct("9/20/2023", format = "%m/%d/%Y")
+
+# Filter out data for participants after the cutoff date
+filtered_data <- subset(dataset2, EndDate <= cutoff_date)
+#combined EC1 and EC2 
+ECcom <- rbind(dataset,filtered_data)
+
+# Calculate the difference in seconds between Start.Date and Recorded.Date
+ECcom$TimeDiff <- as.numeric(difftime(ECcom$EndDate, ECcom$StartDate, units = "secs"))
+
+# Remove participants with less than 5 minutes
+fdataa <- subset(ECcom, TimeDiff >= 300)
+
+# Remove the TimeDiff
+
+fdataa$TimeDiff <- NULL
+
+# Calculate the number of NA or empty values in each row, starting from row 10
+narow <- apply(ECcom[3:nrow(ECcom), ], 1, function(x) sum(is.na(x) | x == ""))
+
+# Maximum number of NAs allowed per row
+threshold <- 25
+
+# Filter out rows with more than the threshold number of NA values
+# and add the first 9 rows back to the data
+ECfinal <- rbind(ECcom[1:2, ], ECcom[3:nrow(ECcom), ][narow <= threshold, ])
+
+
+write.csv(ECfinal, "ECfinal.csv", row.names = FALSE)
+
+
+```
+
+
+
+```{r}
+#Data Cleaning measurments
+
+C1<- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/ECECcenter.csv")
+C2<- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/Lab.csv")
+C3 <- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/North.csv")
+C4<- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/Open.csv")
+C5 <- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/South.csv")
+C6<- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/Heads.csv")
+library(dplyr)
+
+CC1<- select(C1, -Age, -Gender)
+CC3<- select(C3, -Age, -Gender)
+CC4<- select(C4, -Age, -Gender)
+CC5<- select(C5, -Age, -Gender)
+CC6<- select(C6, -Age, -Gender)
+CC2<- select(C2, -SignedConsent, -ipad, -Printedconsent)
+#combined measurements
+cmeasure <- rbind(CC1, CC2, CC3, CC4, CC5, CC6)
+write.csv(cmeasure, "cmeasure.csv", row.names = FALSE)
+
+
+```
+
+

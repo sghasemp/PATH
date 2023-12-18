@@ -1,0 +1,84 @@
+---
+title: "DataDictionary"
+output: html_document
+date: "2023-12-17"
+---
+```{r}
+#Library
+library(dplyr)
+
+```
+
+
+
+
+```{r}
+#Data ditioinary surveys
+
+# Removing the first 30 columns from ECfinal to remove questions  before starting the survey questions ,
+# Removing childs bith to count and crate data dictionary , we can not use insertion type data(Such as date, and Birth date in our survey)
+# Removing random ID and Date and time diff,
+ECfinald <- ECfinal[, -c(1:30 ,37,177, 178,179)]
+#remove the first row which are the questions name in the data 
+ECfinald <- ECfinald[ -c(1),]
+
+
+combinedfts <- data.frame()
+
+# Loop through each column in the dataset
+for (question in names(ECfinald)) {
+  # Check if the column is a factor or character before creating a table
+  if (is.factor(ECfinald[[question]]) || is.character(ECfinald[[question]])) {
+    # Create frequency table and convert to data frame
+    frequencytd <- as.data.frame(table(ECfinald[[question]]))
+    # Reverse the order of the options
+    frequencytd <- frequencytd[rev(seq_len(nrow(frequencytd))), ]
+    # Add a column with the question name
+    frequencytd$Question <- question
+    
+    # Combine with the main data frame using rbind
+    combinedfts <- rbind(combinedfts, frequencytd)
+  }
+}
+
+# add name questions an as a new column
+com <- combinedfts
+com$Fullquestion <- NA
+for (question_abbr in names(ECfinald)) {
+  for (j in 1:nrow(combinedfts)) {
+    if (question_abbr == combinedfts[j,3]) {
+      com[j,4] <- ECfinal[1,question_abbr]
+    }
+  }
+}
+#design the order of columns based on  head of questions, questions, 
+com1<- com[,c(3,4,1,2)]
+
+
+# Set seed for reproducibility
+set.seed(123)  
+
+# Function to generate unique random numbers for each Var1(head of name questions) within a Question
+generaterandom <- function(n) {
+  return(seq(1, n))
+}
+
+# Apply the function to each subset of the data frame (for each Question)
+com1$Numeric<- ave(rep(NA, nrow(com1)), com1$Question, FUN = function(x) generaterandom(length(x)))
+
+write.csv(com1, "comm.csv", row.names = FALSE)
+```
+
+
+
+
+```{r}
+# data dictionary for measuring data
+
+install.packages("datadictionary")
+library(datadictionary)
+
+dm<- create_dictionary(cmeasure)
+write.csv(dm, "dm.csv", row.names = FALSE)
+```
+
