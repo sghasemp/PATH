@@ -79,7 +79,7 @@ com1 <- com1 %>%
                                         ifelse(Var1 == "$40,000 - $49,999", 3,
                                                ifelse(Var1 == "$20,000 - $39,999", 2,
                                                      ifelse(Var1 == "Less than $20,000", 1,Numeric)))))))
-write.csv(com1, "comm.csv", row.names = FALSE)
+write.csv(com1, "DataDictionarySheet1.csv", row.names = FALSE)
 ```
 
 Data dictionary sheet2 to read and calculate statist
@@ -221,13 +221,45 @@ install.packages("datadictionary")
 library(datadictionary)
 
 ```
-
+ measuring data
 
 ```{r}
 # data dictionary for measuring data
 cmeasure<- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/DataCleaning/cmeasure.csv")
 
 dm<- create_dictionary(cmeasure)
-write.csv(dm, "dm.csv", row.names = FALSE)
+write.csv(dm, "DataDictionarySheet3.csv", row.names = FALSE)
 ```
+Stacking three sheets and save them as an excel file.
+
+
+```{r}
+install.packages("readr")
+install.packages("openxlsx")
+
+library(readr)
+library(openxlsx)
+
+
+
+# Create a new workbook
+wb <- createWorkbook()
+
+# Add sheets with data
+addWorksheet(wb, "BasicQuestions")
+writeData(wb, "BasicQuestions", com1)
+
+addWorksheet(wb, "StatisticalSurveys")
+writeData(wb, "StatisticalSurveys", A)
+
+addWorksheet(wb, "StatisticalMeasurment")
+writeData(wb, "StatisticalMeasurment", dm)
+
+# Save as an Excel file
+saveWorkbook(wb, "FinalDataDictionary.xlsx", overwrite = TRUE)
+
+
+```
+
+
 
