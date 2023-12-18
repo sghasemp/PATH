@@ -79,6 +79,14 @@ com1 <- com1 %>%
                                         ifelse(Var1 == "$40,000 - $49,999", 3,
                                                ifelse(Var1 == "$20,000 - $39,999", 2,
                                                      ifelse(Var1 == "Less than $20,000", 1,Numeric)))))))
+
+com1 <- com1 %>%
+  mutate(EducationNumeric = ifelse(Var1 == "Advanced degree", 5,
+                                   ifelse(Var1 == "4 years college degree", 4,
+                                            ifelse(Var1 == "Some college or associates degree", 3,
+                                                 ifelse(Var1== "High school degree or GED", 2,
+                                                        ifelse(Var1 == "Some high school", 1, Numeric))))))
+
 write.csv(com1, "DataDictionarySheet1.csv", row.names = FALSE)
 ```
 
@@ -93,8 +101,11 @@ control_questions <- c("PFSQ5", "PFSQ17", "PFSQ18", "PFSQ20", "PFSQ24", "PFSQ26"
 emotional_questions <- c("PFSQ25", "PFSQ21", "PFSQ22", "PFSQ15", "PFSQ13", "PFSQ2")
 picky_questions <- c("CEBQ32", "CEBQ24", "CEBQ16", "CEBQ10", "CEBQ7")
 
-# Convert text responses to numeric values and calculate mean scores for control, emotional eating, and picky eating
-com2<- ECfinal %>%
+
+
+#remove the first row which are the questions name in the data 
+ECfinald <- ECfinald[ -c(1),]
+com2<- ECfinald %>%
   mutate(
    across(all_of(control_questions), ~ as.numeric(EClist[.x]), .names = "numeric_{.col}"),
     across(all_of(emotional_questions), ~ as.numeric(EClist[.x]), .names = "numeric_{.col}"),
@@ -110,6 +121,36 @@ com2<- ECfinal %>%
 
 
 ```
+
+```{r}
+#Define the mapping from text responses to numeric values
+
+income_map <- c("Less than $20,000" = 1, 
+                "$20,000 - $39,999" = 2, 
+                "$40,000 - $49,999" = 3, 
+                "$50,000 - $74,999" = 4, 
+                "$75,000 - $99,999" = 5, 
+                "More than $100,000" = 6)
+#Convert text responses to numeric values and calculate mean scores for Income
+com2 <- com2 %>%
+  mutate(NumericIncome = income_map[income])
+```
+
+```{r}
+# Define the mapping from education levels to numeric values
+education_map <- c("Some high school" = 1, 
+                   "High school degree or GED" = 2, 
+                   "Some college or associates degree" = 3, 
+                   "4 years college degree" = 4, 
+                   "Advanced degree" = 5)
+
+# Convert text responses to numeric values for Education
+com2 <- com2 %>%
+  mutate(NumericEducation = education_map[ed])
+
+```
+
+
 Calculate mean, mid,SD,min
 
 ```{r}
@@ -168,7 +209,50 @@ control_Age <- com2 %>%
     Min = min(Age, na.rm = TRUE),
     SD = sd(Age, na.rm = TRUE)
   )
+
+#Calculate statistics for income
+calculate_stats <- function(data_vector) {
+    if (!is.numeric(data_vector)) {
+        stop("Data must be numeric.")
+    }
+  
+    stats <- list(
+        Mean = mean(data_vector, na.rm = TRUE),
+        Median = median(data_vector, na.rm = TRUE),
+        Min = min(data_vector, na.rm = TRUE),
+        SD = sd(data_vector, na.rm = TRUE)
+    )
+    
+    return(stats)
+}
+income_stats <- calculate_stats(com2$NumericIncome)
+# Calculate statistics for education
+education_stats <- calculate_stats(com2$NumericEducation)
+
+
+
+
+# Now you can summarize without worrying about NA values
+
+
+control_household <- com2 %>%
+  summarise(
+    Mean = mean(as.numeric(household), na.rm = TRUE),
+    Median = median(household, na.rm = TRUE),
+    Min = min(household, na.rm = TRUE),
+    SD = sd(household, na.rm = TRUE)
+  )
+
+mean(com2$household, na.rm = TRUE)
+print(com2$household)
+
+
+
+
+
+
 ```
+
 
 
 Create a list of questions table
@@ -181,8 +265,8 @@ Surveys_CEP_stats$control_Age<-control_Age
 Surveys_CEP_stats$control_stats<-control_stats
 Surveys_CEP_stats$emotional_stats<-emotional_stats
 Surveys_CEP_stats$picky_stats<-picky_stats
-
-
+Surveys_CEP_stats$income_stats<-income_stats
+Surveys_CEP_stats$education_stats<-education_stats
 
 # Create a data frame
 A <- data.frame(
@@ -208,11 +292,11 @@ ind <- grepl("SD$", names(df))
 A[1:length(df[1,ind]), "SD"] <- t(df[1,ind])
 
 # Add identifiers
-identifiers <- c("PFSQ5","PFSQ17", "PFSQ18","PFSQ20", "PFSQ24", "PFSQ26", "PFSQ25",  "PFSQ21",  "PFSQ22", "PFSQ15", "PFSQ13","PFSQ2","CEBQ32","CEBQ24","CEBQ16","CEBQ10","CEBQ7","control_Age","control_stats","emotional_stats","picky_stats")
+identifiers <- c("PFSQ5","PFSQ17", "PFSQ18","PFSQ20", "PFSQ24", "PFSQ26", "PFSQ25",  "PFSQ21",  "PFSQ22", "PFSQ15", "PFSQ13","PFSQ2","CEBQ32","CEBQ24","CEBQ16","CEBQ10","CEBQ7","control_Age","control_stats","emotional_stats","picky_stats","income_stats","education_stats")
 A$Question <- identifiers
 Survey<- A[,c(5,1:4)]
 # Write the data frame to a CSV file
-write.csv(A, file = "DataDictionarySheet2.csv", row.names = FALSE)
+write.csv(Survey, file = "DataDictionarySheet2.csv", row.names = FALSE)
 ```
 
 Sheet3 Data dictionary for measurement calculation
@@ -250,7 +334,7 @@ addWorksheet(wb, "BasicQuestions")
 writeData(wb, "BasicQuestions", com1)
 
 addWorksheet(wb, "StatisticalSurveys")
-writeData(wb, "StatisticalSurveys", A)
+writeData(wb, "StatisticalSurveys", Survey)
 
 addWorksheet(wb, "StatisticalMeasurment")
 writeData(wb, "StatisticalMeasurment", dm)
