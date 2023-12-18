@@ -9,16 +9,16 @@ date: "2023-12-17"
 library(dplyr)
 #read date
 
-dataset <- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/EC_pre.csv")
-dataset2<- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/EC.csv")
+dataset <- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/RawData/EC_pre.csv")
+dataset2<- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/RawData/EC.csv")
 
 
 ```
 
-
+Data Cleaning survey
 
 ```{r }
-#Data Cleaning survey
+
 #Converting Date Columns
 dataset$StartDate <- as.POSIXct(dataset$StartDate, format = "%m/%d/%Y %H:%M")
 dataset$EndDate<- as.POSIXct(dataset$EndDate, format = "%m/%d/%Y %H:%M")
@@ -61,12 +61,6 @@ ECfinal$RecordedDate<- as.Date(ECfinal$RecordedDate, format="%m/%d/%Y") # adjust
 ECfinal$Age <- as.numeric(difftime(ECfinal$RecordedDate, ECfinal$child_bday, units="days")) / 365.25
 ECfinal$Age <- round(ECfinal$Age,0)
 
-
-
-```
-
-
-```{r}
 ECfinal <- ECfinal[(!(ECfinal$Age > 6 | ECfinal$Age < 3)| is.na(ECfinal$Age)), ]
 
 

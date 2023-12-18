@@ -1,0 +1,235 @@
+---
+title: "Rmaincode"
+output: html_document
+date: "2023-12-18"
+---
+
+```{r setup, include=FALSE}
+
+library(dplyr)
+library(ggplot2)
+library(mediation)
+
+
+
+```
+
+
+```{r cars}
+#Read the data
+
+ECfinal<- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/DataCleaning/ECfinal.csv")
+
+```
+
+SNAP
+```{r}
+# Create a new binary column 'SNAP_Selected' based on the presence of "SNAP" in 'CNP4'
+ECfinal$SNAP <- ifelse(grepl("SNAP", ECfinal$CNP4, fixed = TRUE), 1, 0)
+
+
+```
+
+
+Picky eating- Parent control- Parent emotional
+
+```{r}
+# Define the mapping from text responses to numeric values
+EClist <- c("Always" = 5, "Often" = 4, "Sometimes" =3 , "Rarely" = 2, "Never" = 1 )
+
+# List the question columns for each category based on the names you provided
+control_questions <- c("PFSQ5", "PFSQ17", "PFSQ18", "PFSQ20", "PFSQ24", "PFSQ26")
+emotional_questions <- c("PFSQ25", "PFSQ21", "PFSQ22", "PFSQ15", "PFSQ13", "PFSQ2")
+picky_questions <- c("CEBQ32", "CEBQ24", "CEBQ16", "CEBQ10", "CEBQ7")
+
+# Convert text responses to numeric values and calculate mean scores for control, emotional eating, and picky eating
+ECfinal <- ECfinal %>%
+  mutate(
+    across(all_of(control_questions), ~ as.numeric(EClist[.x]), .names = "numeric_{.col}"),
+    across(all_of(emotional_questions), ~ as.numeric(EClist[.x]), .names = "numeric_{.col}"),
+    across(all_of(picky_questions), ~ as.numeric(EClist[.x]), .names = "numeric_{.col}")
+  ) %>%
+  rowwise() %>%
+  mutate(
+    Control_Score = mean(c_across(starts_with("numeric_PFSQ")), na.rm = TRUE),
+    Emotional_Score = mean(c_across(starts_with("numeric_PFSQ")), na.rm = TRUE),
+    Picky_Score = mean(c_across(starts_with("numeric_CEBQ")), na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+
+```
+
+
+Household
+```{r}
+
+
+```
+
+
+
+RaceEthnicity
+```{r}
+
+
+```
+
+
+ParentEducation
+```{r}
+
+
+```
+
+HouseholdIncome
+```{r}
+
+
+```
+
+Gender
+```{r}
+
+
+```
+
+Child_sex
+```{r}
+
+
+```
+
+Mediation
+
+
+```{r}
+# Load necessary library for mediation analysis
+library(mediation)
+library(car)
+
+
+
+# SNAP is the mediator 
+
+# Mediation analysis with interactions
+mediator_model <- glm(SNAP ~ Control_Score + Emotional_Score + 
+                        Control_Score * Gender + Control_Score * Child_Sex + 
+                        Control_Score * RaceEthnicity + Control_Score * HouseholdIncome + 
+                        Control_Score * ParentEducation + 
+                        Emotional_Score * Gender + Emotional_Score * Chil_dSex + 
+                        Emotional_Score * RaceEthnicity + Emotional_Score * HouseholdIncome + 
+                        Emotional_Score * ParentEducation,
+                      family = binomial, data = ECfinal2)
+
+
+# Calculate VIFs for the mediator model
+vif_values_mediator <- vif(mediator_model)
+# Adjusting the outcome model to include covariates
+outcome_model <- lm(Picky_Score ~ Control_Score + Emotional_Score + SNAP + 
+                      Control_Score * Gender + Control_Score * ChildSex + 
+                      Control_Score * RaceEthnicity + Control_Score * HouseholdIncome + 
+                      Control_Score * ParentEducation + 
+                      Emotional_Score * Gender + Emotional_Score * ChildSex + 
+                      Emotional_Score * RaceEthnicity + Emotional_Score * HouseholdIncome + 
+                      Emotional_Score * ParentEducation, 
+                    data = ECfinal2)
+
+# Step 2: Calculate VIFs for the outcome model
+vif_values_outcome <- vif(outcome_model)
+# Perform the mediation analysis
+med_fit <- mediate(mediator_model, outcome_model, treat = c("Control_Score"), mediator = "SNAP", boot = TRUE, sims = 500)
+
+# View the summary of mediation analysis
+summary(med_fit)
+
+```
+
+
+ relationship between parental feeding style, child picky eating and BMI
+
+```{r}
+#library
+install.packages("ggplot2")
+library("ggplot2")
+install.packages("childsds")
+library("childsds")
+install.packages("anthro")
+library("anthro")
+
+cmeasure<- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/DataCleaning/cmeasure.csv")
+Data <- merge(cmeasure, ECfinal, by = "RandomID")
+
+
+```
+
+
+
+```{r}
+#BMI Percentile
+
+Data$BMIpercentile <- sds(
+  value = Data$BMI,
+  age = Data$Age,
+  sex = Data$sex,
+  male = "Male",
+  female = "Female",
+  ref = cdc.ref,
+  item = "bmi",
+  type = "perc"
+)*100
+
+#Test normality on continuous variables
+tBMI <- shapiro.test(Data$BMIpercentile)
+print(tBMI)
+
+#Normalized
+
+
+
+# to put BMI percentile between 0_1
+
+Data$BMIpercentile <- Data$BMIpercentile / 100
+
+
+
+
+````
+
+
+GLM
+
+```{r}
+#  Check for Multicollinearity
+cor_matrix <- cor(Data[, c("Picky_Score", "Emotional_Score", "Control_Score")])
+
+# Print the correlation matrix
+print(cor_matrix)
+# Excluding one of the correlated predictors (Control_Score) based on the correlation matrix
+glm<- glm(BMIpercentile ~ Picky_Score + Emotional_Score + 
+                           Picky_Score * Emotional_Score,
+                         family = quasibinomial(link = "logit"), data = Data)
+
+
+
+#Check the Model Summary
+summary(glm)
+
+
+# Including interactions between predictors in the model
+glm_model_updated <- glm(BMIpercentile ~ Picky_Score + Emotional_Score + 
+                           Picky_Score * Emotional_Score +
+                           Gender + ChildSex + RaceEthnicity + HouseholdIncome + ParentEducation +
+                           Gender * Picky_Score + ChildSex * Picky_Score +
+                           RaceEthnicity * Picky_Score + HouseholdIncome * Picky_Score +
+                           ParentEducation * Picky_Score,
+                         family = quasibinomial(link = "logit"), data = Data)
+
+
+
+```
+
+
+
+
+

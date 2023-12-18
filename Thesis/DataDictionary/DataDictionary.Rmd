@@ -12,7 +12,7 @@ cat("\014")  # Clears the console
 ECfinal<- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/DataCleaning/ECfinal.csv")
 ```
 
-
+Part 1 Data dictionary to creat the basic questions Numeric and frequency
 
 
 ```{r}
@@ -82,9 +82,9 @@ com1 <- com1 %>%
 write.csv(com1, "comm.csv", row.names = FALSE)
 ```
 
-
+Data dictionary sheet2 to read and calculate statist
 ```{r}
-# Part2 data dictionary: Continue Data dictionary,
+# Data dictionary: Continue Data dictionary,
 # Define the mapping from text responses to numeric values
 EClist <- c("Always" = 5, "Often" = 4, "Sometimes" =3 , "Rarely" = 2, "Never" = 1 )
 
@@ -109,8 +109,10 @@ com2<- ECfinal %>%
   ungroup()
 
 
+```
+Calculate mean, mid,SD,min
 
-##############
+```{r}
 
 # Calculate statistics for each category
 #control
@@ -166,7 +168,11 @@ control_Age <- com2 %>%
     Min = min(Age, na.rm = TRUE),
     SD = sd(Age, na.rm = TRUE)
   )
+```
 
+
+Create a list of questions table
+```{r}
 
 # Create a nested list
 Surveys_CEP_stats <- list(control_question_stats = control_question_stats, emotional_question_stats=
@@ -178,12 +184,6 @@ Surveys_CEP_stats$picky_stats<-picky_stats
 
 
 
-write.csv(Surveys_CEP_stats, "Surveys_CEP_stats.csv", row.names = FALSE)
-
-
-```
-
-```{r}
 # Create a data frame
 A <- data.frame(
   Mean = numeric(),
@@ -212,9 +212,10 @@ identifiers <- c("PFSQ5","PFSQ17", "PFSQ18","PFSQ20", "PFSQ24", "PFSQ26", "PFSQ2
 A$Question <- identifiers
 Survey<- A[,c(5,1:4)]
 # Write the data frame to a CSV file
-write.csv(A, file = "Survey.csv", row.names = FALSE)
+write.csv(A, file = "DataDictionarySheet2.csv", row.names = FALSE)
 ```
 
+Sheet3 Data dictionary for measurement calculation
 ```{r}
 install.packages("datadictionary")
 library(datadictionary)
