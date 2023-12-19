@@ -4,7 +4,14 @@ output: html_document
 date: "2023-12-18"
 ---
 
-```{r setup, include=FALSE}
+```{r}
+
+#Library
+library(dplyr)
+rm(list = ls())
+cat("\014")  # Clears the console
+
+
 
 library(dplyr)
 library(ggplot2)
@@ -15,7 +22,7 @@ library(mediation)
 ```
 
 
-```{r cars}
+```{r}
 #Read the data
 
 ECfinal<- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/DataCleaning/ECfinal.csv")
@@ -64,6 +71,7 @@ ECfinal <- ECfinal %>%
 Household
 ```{r}
 
+household <- ECfinal$household
 
 ```
 
@@ -71,6 +79,18 @@ Household
 
 RaceEthnicity
 ```{r}
+# Create a data frame with the race data
+race_data <- data.frame(
+  race_category = c("White", "Vietnamese", "Other Asian", "Native Hawaiian", 
+                    "Japanese", "Chinese", "Black or African American", 
+                    "Asian Indian", "Another race", 
+                    "American Indian or Alaska Native", "Indonesian", "Bengali", "Asian"),
+  value = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3),
+  detailed_description = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "Indonesian", "Bengali", "Asian")
+)
+# Convert race_category to a factor with levels ordered by the value column
+race_data$race_numeric <- as.numeric(factor(race_data$race_category, 
+                                            levels = unique(race_data$race_category[order(race_data$value)])))
 
 
 ```
@@ -78,24 +98,51 @@ RaceEthnicity
 
 ParentEducation
 ```{r}
+# Define the mapping from education levels to numeric values
+education_map <- c("Some high school" = 1, 
+                   "High school degree or GED" = 2, 
+                   "Some college or associates degree" = 3, 
+                   "4 years college degree" = 4, 
+                   "Advanced degree" = 5)
 
+# Convert text responses to numeric values for Education
+ECfinal <- ECfinal %>%
+  mutate(Education = education_map[ed])
 
 ```
 
 HouseholdIncome
 ```{r}
-
+income_map <- c("Less than $20,000" = 1, 
+                "$20,000 - $39,999" = 2, 
+                "$40,000 - $49,999" = 3, 
+                "$50,000 - $74,999" = 4, 
+                "$75,000 - $99,999" = 5, 
+                "More than $100,000" = 6)
+#Convert text responses to numeric values and calculate mean scores for Income
+ECfinal <- ECfinal %>%
+  mutate(Income = income_map[income])
 
 ```
 
 Gender
 ```{r}
 
+# Convert 'gender' to a factor and then to numeric values
+# Here, 'Female' is coded as 1 and 'Male' as 2
+gender<- as.numeric(factor(ECfinal$gender, levels = c('Female', 'Male')))
+
+
 
 ```
 
 Child_sex
 ```{r}
+# Convert 'child_sex' to a factor and then to numeric values
+# Here, 'Male' is coded as 1 and 'Female' as 2
+sex<- as.numeric(factor(ECfinal$sex, levels = c('Male', 'Female')))
+
+
 
 
 ```
@@ -114,29 +161,31 @@ library(car)
 
 # Mediation analysis with interactions
 mediator_model <- glm(SNAP ~ Control_Score + Emotional_Score + 
-                        Control_Score * Gender + Control_Score * Child_Sex + 
-                        Control_Score * RaceEthnicity + Control_Score * HouseholdIncome + 
-                        Control_Score * ParentEducation + 
-                        Emotional_Score * Gender + Emotional_Score * Chil_dSex + 
-                        Emotional_Score * RaceEthnicity + Emotional_Score * HouseholdIncome + 
-                        Emotional_Score * ParentEducation,
-                      family = binomial, data = ECfinal2)
+                        Control_Score + sex + 
+                        Income + Education + gender + household,
+                      family = binomial, data = ECfinal)
 
 
-# Calculate VIFs for the mediator model
-vif_values_mediator <- vif(mediator_model)
+#Check Multicollinearity 
+
+
+
+
+
+
+
 # Adjusting the outcome model to include covariates
 outcome_model <- lm(Picky_Score ~ Control_Score + Emotional_Score + SNAP + 
-                      Control_Score * Gender + Control_Score * ChildSex + 
-                      Control_Score * RaceEthnicity + Control_Score * HouseholdIncome + 
-                      Control_Score * ParentEducation + 
-                      Emotional_Score * Gender + Emotional_Score * ChildSex + 
-                      Emotional_Score * RaceEthnicity + Emotional_Score * HouseholdIncome + 
-                      Emotional_Score * ParentEducation, 
-                    data = ECfinal2)
+                      Control_Score + sex + Income + Education + gender + household
+                    ,data = ECfinal)
 
-# Step 2: Calculate VIFs for the outcome model
-vif_values_outcome <- vif(outcome_model)
+#Check Multicollinearity 
+
+
+
+
+
+
 # Perform the mediation analysis
 med_fit <- mediate(mediator_model, outcome_model, treat = c("Control_Score"), mediator = "SNAP", boot = TRUE, sims = 500)
 
@@ -144,6 +193,10 @@ med_fit <- mediate(mediator_model, outcome_model, treat = c("Control_Score"), me
 summary(med_fit)
 
 ```
+
+
+
+
 
 
  relationship between parental feeding style, child picky eating and BMI
@@ -157,7 +210,12 @@ library("childsds")
 install.packages("anthro")
 library("anthro")
 
+
+ #read data
 cmeasure<- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/DataCleaning/cmeasure.csv")
+
+
+#merged ECfinal with measurment data based on RandomID
 Data <- merge(cmeasure, ECfinal, by = "RandomID")
 
 
@@ -194,12 +252,13 @@ Data$BMIpercentile <- Data$BMIpercentile / 100
 
 
 
-````
+```
 
 
 GLM
 
 ```{r}
+
 #  Check for Multicollinearity
 cor_matrix <- cor(Data[, c("Picky_Score", "Emotional_Score", "Control_Score")])
 
@@ -207,8 +266,16 @@ cor_matrix <- cor(Data[, c("Picky_Score", "Emotional_Score", "Control_Score")])
 print(cor_matrix)
 # Excluding one of the correlated predictors (Control_Score) based on the correlation matrix
 glm<- glm(BMIpercentile ~ Picky_Score + Emotional_Score + 
-                           Picky_Score * Emotional_Score,
+                           Picky_Score * Emotional_Score++ SNAP + 
+                      Control_Score + sex + Income + Education + gender + household,
                          family = quasibinomial(link = "logit"), data = Data)
+
+#check Multicollinearity
+
+
+
+
+
 
 
 
@@ -216,14 +283,7 @@ glm<- glm(BMIpercentile ~ Picky_Score + Emotional_Score +
 summary(glm)
 
 
-# Including interactions between predictors in the model
-glm_model_updated <- glm(BMIpercentile ~ Picky_Score + Emotional_Score + 
-                           Picky_Score * Emotional_Score +
-                           Gender + ChildSex + RaceEthnicity + HouseholdIncome + ParentEducation +
-                           Gender * Picky_Score + ChildSex * Picky_Score +
-                           RaceEthnicity * Picky_Score + HouseholdIncome * Picky_Score +
-                           ParentEducation * Picky_Score,
-                         family = quasibinomial(link = "logit"), data = Data)
+
 
 
 
