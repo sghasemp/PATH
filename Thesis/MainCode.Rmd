@@ -78,7 +78,7 @@ normality_tests <- lapply(ECfinal[variables_to_test], shapiro.test)
 print(normality_tests)
 #I tried log and cox box ,inverse to normality for both of them date remain nonnormal
 
-
+??????????????????
 
 
 ```
@@ -185,12 +185,16 @@ mediator_model <- glm(SNAP ~ Control_Score + Emotional_Score +
 
 
 #Check Multicollinearity 
-# Convert selected columns to numeric if they are not already
+
 numeric_cols <- c("Control_Score", "Emotional_Score", "Sex", "Income", "Education", "Gender", "household")
 
-# Now, calculate the correlation matrix
-cor_matrix <- cor(ECfinal[numeric_cols])
+# Convert columns to numeric 
+ECfinal[numeric_cols] <- lapply(ECfinal[numeric_cols], function(x) as.numeric(as.character(x)))
+#create correlation matrixs to assess multi clearity
+cor_matrix <- cor(ECfinal[numeric_cols], use = "pairwise.complete.obs")
 print(cor_matrix)
+
+
 
 
 
@@ -199,10 +203,13 @@ print(cor_matrix)
 outcome_model <- lm(Picky_Score ~ Control_Score + Emotional_Score + SNAP + 
                       Control_Score + sex + Income + Education + gender + household
                     ,data = ECfinal)
+#chek multiclirity
+# Correlation Matrix
+cor_matrix <- cor(ECfinal[c("Control_Score", "Emotional_Score", "SNAP", "Sex", "Income", "Education", "Gender", "household")], use = "complete.obs")
+print(cor_matrix)
 
-#Check Multicollinearity 
-vif_res1 <- vif(outcome_model)
-print(vif_res1)
+
+
 
 
 
@@ -264,6 +271,8 @@ tBMI <- shapiro.test(Data$BMIpercentile)
 print(tBMI)
 
 #Normalized:again I used log , coxbox and inverse but still dosent have normal distribution
+??????????
+
 
 # to put BMI percentile between 0_1
 
@@ -279,29 +288,31 @@ GLM
 
 ```{r}
 
-#  Check for Multicollinearity
-cor_matrix <- cor(Data[, c("Picky_Score", "Emotional_Score", "Control_Score")])
 
-# Print the correlation matrix
-print(cor_matrix)
-# Excluding one of the correlated predictors (Control_Score) based on the correlation matrix
 glm<- glm(BMIpercentile ~ Picky_Score + Emotional_Score + 
-                           Picky_Score * Emotional_Score++ SNAP + 
-                      Control_Score + sex + Income + Education + gender + household,
+                           Picky_Score * Emotional_Score+ SNAP + 
+                      Control_Score + Sex + Income + Education + Gender + household,
                          family = quasibinomial(link = "logit"), data = Data)
 
-#check Multicollinearity
-
-glm_vif <- vif(glm)
-print(glm_vif)
 
 
-#Model Refinement
-glms <- step(glm, direction="backward", trace=1, k=2)
+#  Check for Multicollinearity
+variables_for_cor <- c("Picky_Score", "Emotional_Score", "SNAP", "Control_Score", "Sex", "Income", "Education", "Gender", "household")
+#ensure numeric type
+Data[variables_for_cor] <- lapply(Data[variables_for_cor], function(x) as.numeric(as.character(x)))
+# imputation missing data
+Data_imputed <- Data
+for (col in variables_for_cor) {
+  Data_imputed[[col]] <- ifelse(is.na(Data_imputed[[col]]), mean(Data_imputed[[col]], na.rm = TRUE), Data_imputed[[col]])
+}
 
-#Adding all of the Variables to assess for example gender....
+# Calculate correlation matrix
+# Using the dataset with handled missing values (choose Data_complete or Data_imputed)
+cor_matrix <- cor(Data_imputed[variables_for_cor], use = "pairwise.complete.obs")
+print(cor_matrix)
 
-add1(fit.123s, scope = ~ gender, test = "F")
+
+
 
 
 
