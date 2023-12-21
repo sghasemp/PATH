@@ -67,6 +67,23 @@ ECfinal <- ECfinal %>%
 
 ```
 
+```{r}
+# test normality for main variables
+variables_to_test <- c("Picky_Score", "Control_Score", "Emotional_Score")
+
+# Apply the Shapiro-Wilk test to each variable
+normality_tests <- lapply(ECfinal[variables_to_test], shapiro.test)
+
+# Print the results
+print(normality_tests)
+#I tried log and cox box ,inverse to normality for both of them date remain nonnormal
+
+
+
+
+```
+
+
 
 Household
 ```{r}
@@ -128,9 +145,9 @@ ECfinal <- ECfinal %>%
 Gender
 ```{r}
 
-# Convert 'gender' to a factor and then to numeric values
-# Here, 'Female' is coded as 1 and 'Male' as 2
-gender<- as.numeric(factor(ECfinal$gender, levels = c('Female', 'Male')))
+# Create a new binary column 'Sex_Male' based on the value of 'sex'
+ECfinal$Gender <- ifelse(ECfinal$gender == 'Female', 1, 0)
+
 
 
 
@@ -138,9 +155,11 @@ gender<- as.numeric(factor(ECfinal$gender, levels = c('Female', 'Male')))
 
 Child_sex
 ```{r}
-# Convert 'child_sex' to a factor and then to numeric values
-# Here, 'Male' is coded as 1 and 'Female' as 2
-sex<- as.numeric(factor(ECfinal$sex, levels = c('Male', 'Female')))
+
+
+# Create a new binary column 'Sex_Male' based on the value of 'sex'
+ECfinal$Sex <- ifelse(ECfinal$sex == 'Male', 1, 0)
+
 
 
 
@@ -156,20 +175,22 @@ library(mediation)
 library(car)
 
 
-
 # SNAP is the mediator 
 
 # Mediation analysis with interactions
 mediator_model <- glm(SNAP ~ Control_Score + Emotional_Score + 
-                        Control_Score + sex + 
-                        Income + Education + gender + household,
+                        Control_Score + Sex + 
+                        Income + Education + Gender + household,
                       family = binomial, data = ECfinal)
 
 
 #Check Multicollinearity 
+# Convert selected columns to numeric if they are not already
+numeric_cols <- c("Control_Score", "Emotional_Score", "Sex", "Income", "Education", "Gender", "household")
 
-
-
+# Now, calculate the correlation matrix
+cor_matrix <- cor(ECfinal[numeric_cols])
+print(cor_matrix)
 
 
 
@@ -180,7 +201,8 @@ outcome_model <- lm(Picky_Score ~ Control_Score + Emotional_Score + SNAP +
                     ,data = ECfinal)
 
 #Check Multicollinearity 
-
+vif_res1 <- vif(outcome_model)
+print(vif_res1)
 
 
 
@@ -241,9 +263,7 @@ Data$BMIpercentile <- sds(
 tBMI <- shapiro.test(Data$BMIpercentile)
 print(tBMI)
 
-#Normalized
-
-
+#Normalized:again I used log , coxbox and inverse but still dosent have normal distribution
 
 # to put BMI percentile between 0_1
 
@@ -272,16 +292,16 @@ glm<- glm(BMIpercentile ~ Picky_Score + Emotional_Score +
 
 #check Multicollinearity
 
+glm_vif <- vif(glm)
+print(glm_vif)
 
 
+#Model Refinement
+glms <- step(glm, direction="backward", trace=1, k=2)
 
+#Adding all of the Variables to assess for example gender....
 
-
-
-
-#Check the Model Summary
-summary(glm)
-
+add1(fit.123s, scope = ~ gender, test = "F")
 
 
 
