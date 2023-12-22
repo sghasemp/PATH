@@ -87,6 +87,15 @@ com1 <- com1 %>%
                                                  ifelse(Var1== "High school degree or GED", 2,
                                                         ifelse(Var1 == "Some high school", 1, Numeric))))))
 
+com1 <- com1 %>%
+  mutate(RelationshipNumeric = ifelse(Var1 == "Married", 1,
+                              ifelse(Var1 == "Divorced", 2,
+                                     ifelse(Var1 == "Separated", 3,
+                                            ifelse(Var1 == "Widowed", 4,
+                                                   ifelse(Var1 == "Never married", 5, Numeric))))))
+
+
+
 write.csv(com1, "DataDictionarySheet1.csv", row.names = FALSE)
 ```
 
@@ -150,6 +159,20 @@ com2 <- com2 %>%
 
 ```
 
+```{r}
+relationship_map <- c("Never married" = 5, 
+                      "Married" = 1, 
+                      "Divorced" = 2, 
+                      "Separated" = 3, 
+                      "Widowed" = 4)
+
+# Convert text responses to numeric values for Relationship status
+com2 <- com2 %>%
+  mutate(NumericRelationship = relationship_map[relationship])
+
+```
+
+
 
 Calculate mean, mid,SD,min
 
@@ -210,7 +233,7 @@ control_Age <- com2 %>%
     SD = sd(Age, na.rm = TRUE)
   )
 
-#Calculate statistics for income
+#Calculate statistics for income, education ,and marrital status
 calculate_stats <- function(data_vector) {
     if (!is.numeric(data_vector)) {
         stop("Data must be numeric.")
@@ -225,14 +248,15 @@ calculate_stats <- function(data_vector) {
     
     return(stats)
 }
+# calculate statistical for income
 income_stats <- calculate_stats(com2$NumericIncome)
 # Calculate statistics for education
 education_stats <- calculate_stats(com2$NumericEducation)
+#calculate statistical for martital status
+relationship_stats <- calculate_stats(com2$NumericRelationship)
 
 
-
-
-# Now you can summarize without worrying about NA values
+# summarize without worrying about NA values
 
 
 control_household <- com2 %>%
@@ -265,7 +289,7 @@ Surveys_CEP_stats$picky_stats<-picky_stats
 Surveys_CEP_stats$income_stats<-income_stats
 Surveys_CEP_stats$education_stats<-education_stats
 Surveys_CEP_stats$control_household<-control_household
-
+Surveys_CEP_stats$relationship_stats<-relationship_stats
 # Create a data frame
 A <- data.frame(
   Mean = numeric(),
@@ -290,7 +314,7 @@ ind <- grepl("SD$", names(df))
 A[1:length(df[1,ind]), "SD"] <- t(df[1,ind])
 
 # Add identifiers
-identifiers <- c("PFSQ5","PFSQ17", "PFSQ18","PFSQ20", "PFSQ24", "PFSQ26", "PFSQ25",  "PFSQ21",  "PFSQ22", "PFSQ15", "PFSQ13","PFSQ2","CEBQ32","CEBQ24","CEBQ16","CEBQ10","CEBQ7","control_Age","control_stats","emotional_stats","picky_stats","income_stats","education_stats","control_household")
+identifiers <- c("PFSQ5","PFSQ17", "PFSQ18","PFSQ20", "PFSQ24", "PFSQ26", "PFSQ25",  "PFSQ21",  "PFSQ22", "PFSQ15", "PFSQ13","PFSQ2","CEBQ32","CEBQ24","CEBQ16","CEBQ10","CEBQ7","control_Age","control_stats","emotional_stats","picky_stats","income_stats","education_stats","control_household","relationship_stats")
 A$Question <- identifiers
 Survey<- A[,c(5,1:4)]
 # Write the data frame to a CSV file

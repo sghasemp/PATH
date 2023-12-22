@@ -89,8 +89,24 @@ Household
 ```{r}
 
 household <- ECfinal$household
+ECfinal$household <- as.numeric(as.character(ECfinal$household))
 
 ```
+
+Relationship
+```{r}
+relationship_map <- c("Never married" = 5, 
+                      "Married" = 1, 
+                      "Divorced" = 2, 
+                      "Separated" = 3, 
+                      "Widowed" = 4)
+
+# Convert text responses to numeric values for Relationship status
+ECfinal <- ECfinal %>%
+  mutate(Relationship = relationship_map[relationship])
+
+```
+
 
 
 
@@ -178,15 +194,12 @@ library(car)
 # SNAP is the mediator 
 
 # Mediation analysis with interactions
-mediator_model <- glm(SNAP ~ Control_Score + Emotional_Score + 
-                        Control_Score + Sex + 
+mediator_model <- glm(SNAP ~ Control_Score + Sex + Relationship+
                         Income + Education + Gender + household,
                       family = binomial, data = ECfinal)
+#Check Multicollinearity model
 
-
-#Check Multicollinearity 
-
-numeric_cols <- c("Control_Score", "Emotional_Score", "Sex", "Income", "Education", "Gender", "household")
+numeric_cols <- c("Control_Score", "Relationship","Sex", "Income", "Education", "Gender", "household")
 
 # Convert columns to numeric 
 ECfinal[numeric_cols] <- lapply(ECfinal[numeric_cols], function(x) as.numeric(as.character(x)))
@@ -196,19 +209,40 @@ print(cor_matrix)
 
 
 
+#model2
+mediator_model2 <- glm(SNAP ~ Emotional_Score + Sex + Relationship+
+                        Income + Education + Gender + household,
+                      family = binomial, data = ECfinal)
+#Check Multicollinearity model2
+
+numeric_cols2 <- c("Emotional_Score", "Relationship","Sex", "Income", "Education", "Gender", "household")
+
+# Convert columns to numeric 
+ECfinal[numeric_cols2] <- lapply(ECfinal[numeric_cols2], function(x) as.numeric(as.character(x)))
+#create correlation matrixs to assess multi clearity
+cor_matrix2 <- cor(ECfinal[numeric_cols2], use = "pairwise.complete.obs")
+print(cor_matrix2)
 
 
 
-# Adjusting the outcome model to include covariates
-outcome_model <- lm(Picky_Score ~ Control_Score + Emotional_Score + SNAP + 
-                      Control_Score + sex + Income + Education + gender + household
-                    ,data = ECfinal)
+
+# Adjusting the outcome model(control)  to include covariates
+outcome_model <- lm(Picky_Score ~ Control_Score + SNAP + 
+                      Control_Score + Sex + Income + Education + Gender + household+ Relationship ,data = ECfinal)
 #chek multiclirity
 # Correlation Matrix
-cor_matrix <- cor(ECfinal[c("Control_Score", "Emotional_Score", "SNAP", "Sex", "Income", "Education", "Gender", "household")], use = "complete.obs")
+cor_matrix <- cor(ECfinal[c("Control_Score", "SNAP", "Sex", "Income", "Education", "Gender", "Relationship","household")], use = "complete.obs")
 print(cor_matrix)
 
 
+
+# Adjusting the outcome model2 (Emotional)to include covariates
+outcome_model2 <- lm(Picky_Score ~ Emotional_Score + SNAP + 
+                      Control_Score + Sex + Income + Education + Gender + household+ Relationship ,data = ECfinal)
+#chek multiclirity
+# Correlation Matrix
+cor_matrix2 <- cor(ECfinal[c("Emotional_Score", "SNAP", "Sex", "Income", "Education", "Gender", "Relationship","household")], use = "complete.obs")
+print(cor_matrix2)
 
 
 
@@ -221,6 +255,13 @@ med_fit <- mediate(mediator_model, outcome_model, treat = c("Control_Score"), me
 # View the summary of mediation analysis
 summary(med_fit)
 
+
+
+# Perform the mediation analysis
+med_fit2 <- mediate(mediator_model2, outcome_model2, treat = c("Emotional_Score"), mediator = "SNAP", boot = TRUE, sims = 500)
+
+# View the summary of mediation analysis
+summary(med_fit)
 ```
 
 
@@ -291,8 +332,7 @@ GLM
 
 glm<- glm(BMIpercentile ~ Picky_Score + Emotional_Score + 
                            Picky_Score * Emotional_Score+ SNAP + 
-                      Control_Score + Sex + Income + Education + Gender + household,
-                         family = quasibinomial(link = "logit"), data = Data)
+                      Control_Score + Sex + Income + Education + Gender + household+ Relationship, family = quasibinomial(link = "logit"), data = Data)
 
 
 
