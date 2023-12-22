@@ -329,15 +329,15 @@ GLM
 
 ```{r}
 
-
-glm<- glm(BMIpercentile ~ Picky_Score + Emotional_Score + 
-                           Picky_Score * Emotional_Score+ SNAP + 
+# BMI, control and picky eating
+glm<- glm(BMIpercentile ~ Picky_Score + Control_Score + 
+                           Picky_Score * Control_Score+ SNAP + 
                       Control_Score + Sex + Income + Education + Gender + household+ Relationship, family = quasibinomial(link = "logit"), data = Data)
 
 
 
 #  Check for Multicollinearity
-variables_for_cor <- c("Picky_Score", "Emotional_Score", "SNAP", "Control_Score", "Sex", "Income", "Education", "Gender", "household")
+variables_for_cor <- c("Picky_Score", "SNAP", "Control_Score", "Sex", "Income", "Education", "Gender", "household","Relationship")
 #ensure numeric type
 Data[variables_for_cor] <- lapply(Data[variables_for_cor], function(x) as.numeric(as.character(x)))
 # imputation missing data
@@ -354,8 +354,26 @@ print(cor_matrix)
 
 
 
+# BMI, Emotional and picky eating
+glm2 <- glm(BMIpercentile ~ Picky_Score + Emotional_Score + 
+                           Picky_Score * Emotional_Score+ SNAP + Sex + Income + Education + Gender + household+ Relationship, family = quasibinomial(link = "logit"), data = Data)
 
 
+
+#  Check for Multicollinearity
+variables_for_cor2 <- c("Picky_Score", "Emotional_Score", "SNAP", "Sex", "Income", "Education", "Gender", "household","Relationship")
+#ensure numeric type
+Data[variables_for_cor2] <- lapply(Data[variables_for_cor2], function(x) as.numeric(as.character(x)))
+# imputation missing data
+Data_imputed2 <- Data
+for (col in variables_for_cor2) {
+  Data_imputed[[col]] <- ifelse(is.na(Data_imputed2[[col]]), mean(Data_imputed2[[col]], na.rm = TRUE), Data_imputed2[[col]])
+}
+
+# Calculate correlation matrix
+# Using the dataset with handled missing values (choose Data_complete or Data_imputed)
+cor_matrix2 <- cor(Data_imputed2[variables_for_cor2], use = "pairwise.complete.obs")
+print(cor_matrix2)
 
 
 ```
