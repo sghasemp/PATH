@@ -16,7 +16,7 @@ cat("\014")  # Clears the console
 library(dplyr)
 library(ggplot2)
 library(mediation)
-
+library(car)
 
 
 ```
@@ -70,16 +70,13 @@ ECfinal <- ECfinal %>%
 ```{r}
 # test normality for main variables
 variables_to_test <- c("Picky_Score", "Control_Score", "Emotional_Score")
-
+print(variables_to_test)
 # Apply the Shapiro-Wilk test to each variable
 normality_tests <- lapply(ECfinal[variables_to_test], shapiro.test)
 
 # Print the results
 print(normality_tests)
 #I tried log and cox box ,inverse to normality for both of them date remain nonnormal
-
-??????????????????
-
 
 ```
 
@@ -186,26 +183,48 @@ Mediation
 
 
 ```{r}
-# Load necessary library for mediation analysis
-library(mediation)
-library(car)
-
-
-# SNAP is the mediator 
 
 # Mediation analysis with interactions
 mediator_model <- glm(SNAP ~ Control_Score + Sex + Relationship+
                         Income + Education + Gender + household,
                       family = binomial, data = ECfinal)
+
+# Step 2: Outcome Model
+outcome_model <- lm(Picky_Score ~ Control_Score + SNAP +
+                      Sex + Income + Education + Gender + household + Relationship,
+                    data = ECfinal)
+
+# Step 3: Perform Mediation Analysis
+med_fit <- mediate(mediator_model, outcome_model,
+                   treat = "Control_Score", mediator = "SNAP",
+                   boot = TRUE)
+
+# Summary of Mediation Analysis
+summary(med_fit)
+
 #Check Multicollinearity model
 
-numeric_cols <- c("Control_Score", "Relationship","Sex", "Income", "Education", "Gender", "household")
+numeric_predictors <- c("Control_Score", "Sex", "Relationship", "Income", "Education", "Gender", "household")
 
-# Convert columns to numeric 
-ECfinal[numeric_cols] <- lapply(ECfinal[numeric_cols], function(x) as.numeric(as.character(x)))
-#create correlation matrixs to assess multi clearity
-cor_matrix <- cor(ECfinal[numeric_cols], use = "pairwise.complete.obs")
-print(cor_matrix)
+
+# If any numeric predictors are factors, convert them to numeric
+ECfinal[numeric_predictors] <- lapply(ECfinal[numeric_predictors], function(x) {
+  if (is.factor(x)) {
+    as.numeric(as.character(x))
+  } else {
+    x
+  }
+})
+
+# Now run the linear model again
+multicollinearity_model <- lm(ECfinal$Picky_Score ~ ., data = ECfinal[numeric_predictors])
+
+# Calculate VIF
+vif_values <- vif(multicollinearity_model)
+print(vif_values)
+
+
+
 
 
 
@@ -213,59 +232,41 @@ print(cor_matrix)
 mediator_model2 <- glm(SNAP ~ Emotional_Score + Sex + Relationship+
                         Income + Education + Gender + household,
                       family = binomial, data = ECfinal)
-#Check Multicollinearity model2
 
-numeric_cols2 <- c("Emotional_Score", "Relationship","Sex", "Income", "Education", "Gender", "household")
-
-# Convert columns to numeric 
-ECfinal[numeric_cols2] <- lapply(ECfinal[numeric_cols2], function(x) as.numeric(as.character(x)))
-#create correlation matrixs to assess multi clearity
-cor_matrix2 <- cor(ECfinal[numeric_cols2], use = "pairwise.complete.obs")
-print(cor_matrix2)
-
-
-
-
-# Adjusting the outcome model(control)  to include covariates
-outcome_model <- lm(Picky_Score ~ Control_Score + SNAP + 
-                      Control_Score + Sex + Income + Education + Gender + household+ Relationship ,data = ECfinal)
-#chek multiclirity
-# Correlation Matrix
-cor_matrix <- cor(ECfinal[c("Control_Score", "SNAP", "Sex", "Income", "Education", "Gender", "Relationship","household")], use = "complete.obs")
-print(cor_matrix)
-
-
-
-# Adjusting the outcome model2 (Emotional)to include covariates
 outcome_model2 <- lm(Picky_Score ~ Emotional_Score + SNAP + 
-                      Control_Score + Sex + Income + Education + Gender + household+ Relationship ,data = ECfinal)
-#chek multiclirity
-# Correlation Matrix
-cor_matrix2 <- cor(ECfinal[c("Emotional_Score", "SNAP", "Sex", "Income", "Education", "Gender", "Relationship","household")], use = "complete.obs")
-print(cor_matrix2)
-
-
-
-
+              Sex + Income + Education + Gender + household+ Relationship ,data = ECfinal)
 
 
 # Perform the mediation analysis
-med_fit <- mediate(mediator_model, outcome_model, treat = c("Control_Score"), mediator = "SNAP", boot = TRUE, sims = 500)
+med_fit2 <- mediate(mediator_model2, outcome_model2, treat = c("Emotional_Score"), mediator = "SNAP", boot = TRUE)
 
 # View the summary of mediation analysis
-summary(med_fit)
+summary(med_fit2)
 
 
+#Check Multicollinearity model
 
-# Perform the mediation analysis
-med_fit2 <- mediate(mediator_model2, outcome_model2, treat = c("Emotional_Score"), mediator = "SNAP", boot = TRUE, sims = 500)
+numeric_predictors2 <- c("Emotional_Score", "Sex", "Relationship", "Income", "Education", "Gender", "household")
 
-# View the summary of mediation analysis
-summary(med_fit)
+
+# If any numeric predictors are factors, convert them to numeric
+ECfinal[numeric_predictors2] <- lapply(ECfinal[numeric_predictors2], function(x) {
+  if (is.factor(x)) {
+    as.numeric(as.character(x))
+  } else {
+    x
+  }
+})
+
+# Now run the linear model again
+multicollinearity_model2 <- lm(ECfinal$Picky_Score ~ ., data = ECfinal[numeric_predictors2])
+
+# Calculate VIF
+vif_values2 <- vif(multicollinearity_model2)
+print(vif_values2)
+
+
 ```
-
-
-
 
 
 
@@ -312,13 +313,12 @@ tBMI <- shapiro.test(Data$BMIpercentile)
 print(tBMI)
 
 #Normalized:again I used log , coxbox and inverse but still dosent have normal distribution
-??????????
+#??????????
 
 
 # to put BMI percentile between 0_1
 
 Data$BMIpercentile <- Data$BMIpercentile / 100
-
 
 
 
