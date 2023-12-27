@@ -67,16 +67,72 @@ ECfinal <- ECfinal %>%
 
 ```
 
+ checked the normality ,
+ picky _Score was  not normal distributed, I did :
+ Log Transformation
+ Square Root Transformation
+ Inverse Transformation
+ Box-Cox Transformation
+ Yeo-Johnson Transformation
+
+ 
+ 
+ 
 ```{r}
-# test normality for main variables
+#shapiro test normality for main variables
 variables_to_test <- c("Picky_Score", "Control_Score", "Emotional_Score")
 print(variables_to_test)
 # Apply the Shapiro-Wilk test to each variable
 normality_tests <- lapply(ECfinal[variables_to_test], shapiro.test)
-
 # Print the results
 print(normality_tests)
-#I tried log and cox box ,inverse to normality for both of them date remain nonnormal
+
+
+#QQplot
+
+variables_to_test <- c("Picky_Score", "Control_Score", "Emotional_Score")
+
+for (variable in variables_to_test) {
+  # Create a QQ plot for each variable
+  p <- ggplot(ECfinal, aes(sample = .data[[variable]])) +
+       stat_qq() +
+       stat_qq_line(colour = "blue") +
+       ggtitle(paste("QQ Plot for", variable)) +
+       theme_minimal()
+  
+  # Print the plot
+  print(p)
+}
+
+
+
+# Log transformation 
+
+ECfinal$Picky_Score_log <- log(ECfinal$Picky_Score + 1e-6)
+ECfinal$Control_Score_log <- log(ECfinal$Control_Score + 1e-6)
+ECfinal$Emotional_Score_log <- log(ECfinal$Emotional_Score + 1e-6)
+
+
+#QQplot log
+
+variables_log <- c("Picky_Score_log", "Control_Score_log", "Emotional_Score_log")
+
+for (variable in variables_log) {
+  # Create a QQ plot for each variable
+  p <- ggplot(ECfinal, aes(sample = .data[[variable]])) +
+       stat_qq() +
+       stat_qq_line(colour = "blue") +
+       ggtitle(paste("QQ Plot for", variable)) +
+       theme_minimal()
+  
+}
+# Shapiro-Wilk test for log-transformed variables
+shapiro_results_log <- lapply(ECfinal[variables_log], shapiro.test)
+
+# Print the Shapiro-Wilk test results
+print(shapiro_results_log)
+
+
 
 ```
 
@@ -159,7 +215,7 @@ Gender
 ```{r}
 
 # Create a new binary column 'Sex_Male' based on the value of 'sex'
-ECfinal$Gender <- ifelse(ECfinal$gender == 'Female', 1, 0)
+ECfinal$Gender <- as.numeric(ifelse(ECfinal$gender == 'Female', 1, 0))
 
 
 
@@ -171,7 +227,7 @@ Child_sex
 
 
 # Create a new binary column 'Sex_Male' based on the value of 'sex'
-ECfinal$Sex <- ifelse(ECfinal$sex == 'Male', 1, 0)
+ECfinal$Sex <- as.numeric(ifelse(ECfinal$sex == 'Male', 1, 0))
 
 
 
@@ -185,18 +241,18 @@ Mediation
 ```{r}
 
 # Mediation analysis with interactions
-mediator_model <- glm(SNAP ~ Control_Score + Sex + Relationship+
+mediator_model <- glm(SNAP ~ Control_Score_log + Sex + Relationship+
                         Income + Education + Gender + household,
                       family = binomial, data = ECfinal)
 
 # Step 2: Outcome Model
-outcome_model <- lm(Picky_Score ~ Control_Score + SNAP +
+outcome_model <- lm(Picky_Score_log ~ Control_Score_log + SNAP +
                       Sex + Income + Education + Gender + household + Relationship,
                     data = ECfinal)
 
 # Step 3: Perform Mediation Analysis
 med_fit <- mediate(mediator_model, outcome_model,
-                   treat = "Control_Score", mediator = "SNAP",
+                   treat = "Control_Score_log", mediator = "SNAP",
                    boot = TRUE)
 
 # Summary of Mediation Analysis
@@ -204,17 +260,7 @@ summary(med_fit)
 
 #Check Multicollinearity model
 
-numeric_predictors <- c("Control_Score", "Sex", "Relationship", "Income", "Education", "Gender", "household")
-
-
-# If any numeric predictors are factors, convert them to numeric
-ECfinal[numeric_predictors] <- lapply(ECfinal[numeric_predictors], function(x) {
-  if (is.factor(x)) {
-    as.numeric(as.character(x))
-  } else {
-    x
-  }
-})
+numeric_predictors <- c("Control_Score_log", "Sex", "Relationship", "Income", "Education", "Gender", "household")
 
 # Now run the linear model again
 multicollinearity_model <- lm(ECfinal$Picky_Score ~ ., data = ECfinal[numeric_predictors])
@@ -229,16 +275,16 @@ print(vif_values)
 
 
 #model2
-mediator_model2 <- glm(SNAP ~ Emotional_Score + Sex + Relationship+
+mediator_model2 <- glm(SNAP ~ Emotional_Score_log + Sex + Relationship+
                         Income + Education + Gender + household,
                       family = binomial, data = ECfinal)
 
-outcome_model2 <- lm(Picky_Score ~ Emotional_Score + SNAP + 
+outcome_model2 <- lm(Picky_Score_log ~ Emotional_Score_log + SNAP + 
               Sex + Income + Education + Gender + household+ Relationship ,data = ECfinal)
 
 
 # Perform the mediation analysis
-med_fit2 <- mediate(mediator_model2, outcome_model2, treat = c("Emotional_Score"), mediator = "SNAP", boot = TRUE)
+med_fit2 <- mediate(mediator_model2, outcome_model2, treat = c("Emotional_Score_log"), mediator = "SNAP", boot = TRUE)
 
 # View the summary of mediation analysis
 summary(med_fit2)
@@ -246,17 +292,8 @@ summary(med_fit2)
 
 #Check Multicollinearity model
 
-numeric_predictors2 <- c("Emotional_Score", "Sex", "Relationship", "Income", "Education", "Gender", "household")
+numeric_predictors2 <- c("Emotional_Score_log", "Sex", "Relationship", "Income", "Education", "Gender", "household")
 
-
-# If any numeric predictors are factors, convert them to numeric
-ECfinal[numeric_predictors2] <- lapply(ECfinal[numeric_predictors2], function(x) {
-  if (is.factor(x)) {
-    as.numeric(as.character(x))
-  } else {
-    x
-  }
-})
 
 # Now run the linear model again
 multicollinearity_model2 <- lm(ECfinal$Picky_Score ~ ., data = ECfinal[numeric_predictors2])
@@ -280,7 +317,7 @@ install.packages("childsds")
 library("childsds")
 install.packages("anthro")
 library("anthro")
-
+library(car)
 
  #read data
 cmeasure<- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/DataCleaning/cmeasure.csv")
@@ -306,74 +343,70 @@ Data$BMIpercentile <- sds(
   ref = cdc.ref,
   item = "bmi",
   type = "perc"
-)*100
+)
 
+```
+
+Check the normality of BMI ,
+I did log sqr  and bestNormalized were not normal
+
+```{r}
 #Test normality on continuous variables
 tBMI <- shapiro.test(Data$BMIpercentile)
 print(tBMI)
 
-#Normalized:again I used log , coxbox and inverse but still dosent have normal distribution
-#??????????
 
+# Apply the arcsine transformation for proportions
+Data$BMIpercentile_a <- asin(sqrt(Data$BMIpercentile))
+tBMI_arcsine <- shapiro.test(Data$BMIpercentile_a)
+print(tBMI_arcsine)
 
-# to put BMI percentile between 0_1
-
-Data$BMIpercentile <- Data$BMIpercentile / 100
 
 
 
 ```
 
 
-GLM
+LM
 
 ```{r}
 
 # BMI, control and picky eating
-glm<- glm(BMIpercentile ~ Picky_Score + Control_Score + 
-                           Picky_Score * Control_Score+ SNAP + 
-                      Control_Score + Sex + Income + Education + Gender + household+ Relationship, family = quasibinomial(link = "logit"), data = Data)
+# Fit a linear regression model
+lm <- lm(BMIpercentile_a ~ Picky_Score_log + Control_Score_log + 
+                Picky_Score_log * Control_Score_log + SNAP + 
+                Control_Score_log + Sex + Income + Education + Gender + household + Relationship, data = Data)
+
+# Summarize the linear regression model
+summary(lm)
+
+# Calculate GVIFs
+vif_values <- car::vif(lm, type = "predictor")
+
+# View the GVIF values
+print(vif_values)
 
 
-
-#  Check for Multicollinearity
-variables_for_cor <- c("Picky_Score", "SNAP", "Control_Score", "Sex", "Income", "Education", "Gender", "household","Relationship")
-#ensure numeric type
-Data[variables_for_cor] <- lapply(Data[variables_for_cor], function(x) as.numeric(as.character(x)))
-# imputation missing data
-Data_imputed <- Data
-for (col in variables_for_cor) {
-  Data_imputed[[col]] <- ifelse(is.na(Data_imputed[[col]]), mean(Data_imputed[[col]], na.rm = TRUE), Data_imputed[[col]])
-}
-
-# Calculate correlation matrix
-# Using the dataset with handled missing values (choose Data_complete or Data_imputed)
-cor_matrix <- cor(Data_imputed[variables_for_cor], use = "pairwise.complete.obs")
-print(cor_matrix)
 
 
 
 
 # BMI, Emotional and picky eating
-glm2 <- glm(BMIpercentile ~ Picky_Score + Emotional_Score + 
-                           Picky_Score * Emotional_Score+ SNAP + Sex + Income + Education + Gender + household+ Relationship, family = quasibinomial(link = "logit"), data = Data)
+lm2 <- lm(BMIpercentile_a ~ Picky_Score_log + Emotional_Score_log + 
+                           Picky_Score_log * Emotional_Score_log+ SNAP + Sex + Income + Education + Gender + household+ Relationship, data = Data)
 
 
+# Summarize the linear regression model
+summary(lm2)
 
-#  Check for Multicollinearity
-variables_for_cor2 <- c("Picky_Score", "Emotional_Score", "SNAP", "Sex", "Income", "Education", "Gender", "household","Relationship")
-#ensure numeric type
-Data[variables_for_cor2] <- lapply(Data[variables_for_cor2], function(x) as.numeric(as.character(x)))
-# imputation missing data
-Data_imputed2 <- Data
-for (col in variables_for_cor2) {
-  Data_imputed[[col]] <- ifelse(is.na(Data_imputed2[[col]]), mean(Data_imputed2[[col]], na.rm = TRUE), Data_imputed2[[col]])
-}
 
-# Calculate correlation matrix
-# Using the dataset with handled missing values (choose Data_complete or Data_imputed)
-cor_matrix2 <- cor(Data_imputed2[variables_for_cor2], use = "pairwise.complete.obs")
-print(cor_matrix2)
+# Calculate GVIFs
+vif_values2 <- car::vif(lm2, type = "predictor")
+
+# View the GVIF values
+print(vif_values2)
+
+
 
 
 ```
