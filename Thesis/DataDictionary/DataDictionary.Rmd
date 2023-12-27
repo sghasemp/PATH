@@ -99,7 +99,7 @@ com1 <- com1 %>%
 write.csv(com1, "DataDictionarySheet1.csv", row.names = FALSE)
 ```
 
-Data dictionary sheet2 to read and calculate statist
+Data dictionary sheet2 to read and calculate statistic
 ```{r}
 # Data dictionary: Continue Data dictionary,
 # Define the mapping from text responses to numeric values
@@ -132,7 +132,7 @@ com2<- ECfinald %>%
 ```
 
 ```{r}
-#Define the mapping from text responses to numeric values
+#Define the mapping from income levels to numeric
 
 income_map <- c("Less than $20,000" = 1, 
                 "$20,000 - $39,999" = 2, 
@@ -160,6 +160,7 @@ com2 <- com2 %>%
 ```
 
 ```{r}
+# Define the mapping from relationship levels to numeric values
 relationship_map <- c("Never married" = 5, 
                       "Married" = 1, 
                       "Divorced" = 2, 
@@ -328,7 +329,7 @@ install.packages("datadictionary")
 library(datadictionary)
 
 ```
- measuring data
+Measuring data , height weight and BMI
 
 ```{r}
 # data dictionary for measuring data

@@ -80,10 +80,10 @@ write.csv(ECfinal, file = file_path, row.names = FALSE)
 
 ```
 
-
+Data Cleaning measurments
 
 ```{r}
-#Data Cleaning measurments
+
 
 C1<- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/ECECcenter.csv")
 C2<- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/Lab.csv")
