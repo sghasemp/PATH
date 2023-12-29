@@ -340,14 +340,21 @@ print(vif_values2)
 
 ```{r}
 #library
-install.packages("ggplot2")
+ 
 library("ggplot2")
-install.packages("childsds")
+
 library("childsds")
-install.packages("anthro")
+
 library("anthro")
 library(car)
+library("dplyr")
 
+
+```
+Read the data and merge the measurments with ECfinal
+
+
+```{r}
  #read data
 cmeasure<- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/DataCleaning/cmeasure.csv")
 
@@ -358,7 +365,7 @@ Data <- merge(cmeasure, ECfinal, by = "RandomID")
 
 ```
 
-
+BMI Percentile
 
 ```{r}
 #BMI Percentile
@@ -375,74 +382,229 @@ Data$BMIpercentile <- sds(
 )
 
 ```
-
-Check the normality of BMI ,
-I did log sqr  and bestNormalized were not normal
+Categorical BMI 
 
 ```{r}
-#Test normality on continuous variables
-tBMI <- shapiro.test(Data$BMIpercentile)
-print(tBMI)
+Data <- Data %>%
+  mutate(BMI_Category = case_when(
+    BMIpercentile < 0.05 ~ "Underweight",
+    BMIpercentile >= 0.05 & BMIpercentile <= 0.85 ~ "Normal",
+    BMIpercentile > 0.85 & BMIpercentile <= 0.95 ~ "Overweight",
+    BMIpercentile > 0.95 ~ "Obese",
+    TRUE ~ NA_character_  # for handling any missing or unexpected values
+  ))
+
+```
 
 
-# Apply the arcsine transformation for normality
-Data$BMIpercentile_a <- asin(sqrt(Data$BMIpercentile))
-tBMI_arcsine <- shapiro.test(Data$BMIpercentile_a)
-print(tBMI_arcsine)
+
+```{r}
+#LIbrary
+
+library(nnet)
+```
+
+*********
+ PLEASE pay attestation Just Run one of the  way1 or way2 for the first and second model.
+ 
+ *******
+ 
+FIRST WAY TO FIT THE MODEL 1
+
+Doing Multiple logestic regression for  categorical BMI, control and picky eating:model1
+```{r}
+
+# Ensure BMI_Category is a factor
+Data$BMI_Category <- as.factor(Data$BMI_Category)
+
+# Fit a multinomial logistic regression model
+multinom_model <- multinom(BMI_Category ~ Picky_Score_log + Control_Score_log +
+                           Picky_Score_log * Control_Score_log + SNAP + 
+                           Sex + Income + Education + Relation + household + 
+                           Relationship + num_children, data = Data)
+
+# Summarize the multinomial logistic regression model
+summary(multinom_model) 
 
 
+model_summary <- summary(multinom_model)
+
+# Extract coefficients and standard errors
+coefficients <- coef(model_summary)
+standard_errors <- model_summary$standard.errors
+
+# Calculate z-values
+z_values <- coefficients / standard_errors
+
+# Calculate p-values
+p_values <- 2 * (1 - pnorm(abs(z_values)))
+
+print(p_values)
 
 
 ```
 
 
-Linear regression for BMI, control and picky eating:model1
+
+SECOND WAY TO FIT THE MODEL 1
+GLM for BMI, control and picky eating
+
 ```{r}
 
-# Fit a linear regression model
-lm <- lm(BMIpercentile_a ~ Picky_Score_log + Control_Score_log + 
-                Picky_Score_log * Control_Score_log + SNAP + 
-                Control_Score_log + Sex + Income + Education + Relation + household + Relationship + num_children , data = Data)
+# Ensure BMI_Category is a factor
+Data$BMI_Category <- as.factor(Data$BMI_Category)
 
-# Summarize the linear regression model
-summary(lm)
+# Create binary outcome variables
+Data$Obese <- as.numeric(Data$BMI_Category == "Obese")
+Data$Overweight <- as.numeric(Data$BMI_Category == "Overweight")
+Data$Underweight <- as.numeric(Data$BMI_Category == "Underweight")
+Data$Normal <- as.numeric(Data$BMI_Category == "Normal")
+# Fit GLM for Obese
+glm_obese <- glm(Obese ~ Picky_Score_log + Control_Score_log +
+                 Picky_Score_log * Control_Score_log + SNAP + 
+                 Sex + Income + Education + Relation + household + 
+                 Relationship + num_children, 
+                 family = binomial, data = Data)
+summary(glm_obese)
+
+# Fit GLM for Overweight
+glm_overweight <- glm(Overweight ~ Picky_Score_log + Control_Score_log +
+                      Picky_Score_log * Control_Score_log + SNAP + 
+                      Sex + Income + Education + Relation + household + 
+                      Relationship + num_children, 
+                      family = binomial, data = Data)
+summary(glm_overweight)
+
+# Fit GLM for Underweight
+glm_underweight <- glm(Underweight ~ Picky_Score_log + Control_Score_log +
+                       Picky_Score_log * Control_Score_log + SNAP + 
+                       Sex + Income + Education + Relation + household + 
+                       Relationship + num_children, 
+                       family = binomial, data = Data)
+summary(glm_underweight)
+# Fit GLM for Underweight
+glm_Normal <- glm(Normal ~ Picky_Score_log + Control_Score_log +
+                       Picky_Score_log * Control_Score_log + SNAP + 
+                       Sex + Income + Education + Relation + household + 
+                       Relationship + num_children, 
+                       family = binomial, data = Data)
+summary(glm_Normal)
+
+
 ```
+
 
 Test Multicollinearity for model 1
-```{r}
-# Calculate GVIFs
-vif_values <- car::vif(lm, type = "predictor")
-
-# View the GVIF values
-print(vif_values)
-
-```
-Linear regression for BMI, emotional and picky eating:model2
 
 ```{r}
-# BMI, Emotional and picky eating
-lm2 <- lm(BMIpercentile_a ~ Picky_Score_log + Emotional_Score_log + 
-                           Picky_Score_log * Emotional_Score_log+ SNAP + Sex + Income + Education + Relation + household+ Relationship + num_children, data = Data)
+# Calculate the correlation matrix of predictors
+correlation_matrix <- cor(Data[c("Picky_Score_log", "Control_Score_log", "SNAP", "Sex", "Income", "Education", "Relation", "household", "Relationship", "num_children")])
 
-
-# Summarize the linear regression model
-summary(lm2)
-```
-
-
-Test Multicollinearity for model2
-```{r}
-
-# Calculate GVIFs
-vif_values2 <- car::vif(lm2, type = "predictor")
-
-# View the GVIF values
-print(vif_values2)
-
-
+# View the correlation matrix
+print(correlation_matrix)
 
 
 ```
+
+FIRST WAY TO FIT THE MODEL 2
+
+Doing Multiple logestic regression for  categorical BMI, Emotional and picky eating:model1
+```{r}
+
+# Ensure BMI_Category is a factor
+Data$BMI_Category <- as.factor(Data$BMI_Category)
+
+# Fit a multinomial logistic regression model
+multinom_model <- multinom(BMI_Category ~ Picky_Score_log + Emotional_Score_log +
+                           Picky_Score_log * Emotional_Score_log + SNAP + 
+                           Sex + Income + Education + Relation + household + 
+                           Relationship + num_children, data = Data)
+
+# Summarize the multinomial logistic regression model
+summary(multinom_model) 
+
+
+model_summary <- summary(multinom_model)
+
+# Extract coefficients and standard errors
+coefficients <- coef(model_summary)
+standard_errors <- model_summary$standard.errors
+
+# Calculate z-values
+z_values <- coefficients / standard_errors
+
+# Calculate p-values
+p_values <- 2 * (1 - pnorm(abs(z_values)))
+
+print(p_values)
+
+
+```
+
+
+
+
+SECOND WAY TO FIT THE MODEL 2
+GLM for BMI, Emotional and picky eating
+
+```{r}
+
+# Ensure BMI_Category is a factor
+Data$BMI_Category <- as.factor(Data$BMI_Category)
+
+# Create binary outcome variables
+Data$Obese <- as.numeric(Data$BMI_Category == "Obese")
+Data$Overweight <- as.numeric(Data$BMI_Category == "Overweight")
+Data$Underweight <- as.numeric(Data$BMI_Category == "Underweight")
+Data$Normal <- as.numeric(Data$BMI_Category == "Normal")
+# Fit GLM for Obese
+glm_obese <- glm(Obese ~ Picky_Score_log + Emotional_Score_log +
+                 Picky_Score_log * Control_Score_log + SNAP + 
+                 Sex + Income + Education + Relation + household + 
+                 Relationship + num_children, 
+                 family = binomial, data = Data)
+summary(glm_obese)
+
+# Fit GLM for Overweight
+glm_overweight <- glm(Overweight ~ Picky_Score_log + Emotional_Score_log +
+                      Picky_Score_log * Control_Score_log + SNAP + 
+                      Sex + Income + Education + Relation + household + 
+                      Relationship + num_children, 
+                      family = binomial, data = Data)
+summary(glm_overweight)
+
+# Fit GLM for Underweight
+glm_underweight <- glm(Underweight ~ Picky_Score_log + Emotional_Score_log +
+                       Picky_Score_log * Control_Score_log + SNAP + 
+                       Sex + Income + Education + Relation + household + 
+                       Relationship + num_children, 
+                       family = binomial, data = Data)
+summary(glm_underweight)
+# Fit GLM for Underweight
+glm_Normal <- glm(Normal ~ Picky_Score_log + Emotional_Score_log +
+                       Picky_Score_log * Control_Score_log + SNAP + 
+                       Sex + Income + Education + Relation + household + 
+                       Relationship + num_children, 
+                       family = binomial, data = Data)
+summary(glm_Normal)
+
+
+``
+
+```
+
+Test Multicollinearity for model 2
+
+```{r}
+# Calculate the correlation matrix of predictors
+correlation_matrix <- cor(Data[c("Picky_Score_log", "Emotional_Score_log", "SNAP", "Sex", "Income", "Education", "Relation", "household", "Relationship", "num_children")])
+
+# View the correlation matrix
+print(correlation_matrix)
+
+
+```
+
 
 
 
