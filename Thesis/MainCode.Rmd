@@ -67,8 +67,10 @@ ECfinal <- ECfinal %>%
 
 ```
 
- checked the normality ,
- picky _Score was  not normal distributed, I did :
+Checked the normality  
+
+
+ picky _Score has  not normal distributed, I did :
  Log Transformation
  Square Root Transformation
  Inverse Transformation
@@ -141,10 +143,18 @@ print(shapiro_results_log)
 Household
 ```{r}
 
-household <- ECfinal$household
 ECfinal$household <- as.numeric(as.character(ECfinal$household))
 
 ```
+
+childs number
+```{r}
+
+ECfinal$num_children <- as.numeric(as.character(ECfinal$num_children))
+
+```
+
+
 
 Relationship
 ```{r}
@@ -211,11 +221,15 @@ ECfinal <- ECfinal %>%
 
 ```
 
-Gender
+Parent
 ```{r}
 
-# Create a new binary column 'Sex_Male' based on the value of 'sex'
-ECfinal$Gender <- as.numeric(ifelse(ECfinal$gender == 'Female', 1, 0))
+# Define the mapping from childs_ parents relationship levels to numeric values
+relation_map <- c("Father" = 1, "Mother" = 2, "Other" = 3)
+
+# Assuming 'com2' is your data frame and 'relation' is the column with these responses
+ECfinal <- ECfinal %>%
+  mutate(Relation = relation_map[parent])
 
 
 
@@ -226,11 +240,12 @@ Child_sex
 ```{r}
 
 
-# Create a new binary column 'Sex_Male' based on the value of 'sex'
-ECfinal$Sex <- as.numeric(ifelse(ECfinal$sex == 'Male', 1, 0))
+# Define the mapping from sex categories to numeric values (only male and female)
+sex_map <- c("Male" = 1, "Female" = 2)
 
-
-
+# Assuming 'com2' is your data frame and 'sex' is the column with these responses
+ECfinal <- ECfinal %>%
+  mutate(Sex = sex_map[sex])
 
 
 ```
@@ -242,13 +257,12 @@ Mediation
 
 # Mediation analysis with interactions
 mediator_model <- glm(SNAP ~ Control_Score_log + Sex + Relationship+
-                        Income + Education + Gender + household,
+                        Income + Education + Relation + household + num_children,
                       family = binomial, data = ECfinal)
 
 # Step 2: Outcome Model
 outcome_model <- lm(Picky_Score_log ~ Control_Score_log + SNAP +
-                      Sex + Income + Education + Gender + household + Relationship,
-                    data = ECfinal)
+                      Sex + Income + Education + Relation + household + Relationship + num_children , data = ECfinal)
 
 # Step 3: Perform Mediation Analysis
 med_fit <- mediate(mediator_model, outcome_model,
@@ -260,7 +274,7 @@ summary(med_fit)
 
 #Check Multicollinearity model
 
-numeric_predictors <- c("Control_Score_log", "Sex", "Relationship", "Income", "Education", "Gender", "household")
+numeric_predictors <- c("Control_Score_log", "Sex", "Relationship", "Income", "Education", "Relation", "household", "num_children")
 
 # Now run the linear model again
 multicollinearity_model <- lm(ECfinal$Picky_Score ~ ., data = ECfinal[numeric_predictors])
@@ -276,11 +290,11 @@ print(vif_values)
 
 #model2
 mediator_model2 <- glm(SNAP ~ Emotional_Score_log + Sex + Relationship+
-                        Income + Education + Gender + household,
+                        Income + Education + Relation + household+num_children,
                       family = binomial, data = ECfinal)
 
 outcome_model2 <- lm(Picky_Score_log ~ Emotional_Score_log + SNAP + 
-              Sex + Income + Education + Gender + household+ Relationship ,data = ECfinal)
+              Sex + Income + Education + Relation + household+ Relationship +num_children ,data = ECfinal)
 
 
 # Perform the mediation analysis
@@ -292,7 +306,7 @@ summary(med_fit2)
 
 #Check Multicollinearity model
 
-numeric_predictors2 <- c("Emotional_Score_log", "Sex", "Relationship", "Income", "Education", "Gender", "household")
+numeric_predictors2 <- c("Emotional_Score_log", "Sex", "Relationship", "Income","num_children", "Education", "Relation", "household")
 
 
 # Now run the linear model again
@@ -375,7 +389,7 @@ LM
 # Fit a linear regression model
 lm <- lm(BMIpercentile_a ~ Picky_Score_log + Control_Score_log + 
                 Picky_Score_log * Control_Score_log + SNAP + 
-                Control_Score_log + Sex + Income + Education + Gender + household + Relationship, data = Data)
+                Control_Score_log + Sex + Income + Education + Relation + household + Relationship + num_children , data = Data)
 
 # Summarize the linear regression model
 summary(lm)
@@ -393,7 +407,7 @@ print(vif_values)
 
 # BMI, Emotional and picky eating
 lm2 <- lm(BMIpercentile_a ~ Picky_Score_log + Emotional_Score_log + 
-                           Picky_Score_log * Emotional_Score_log+ SNAP + Sex + Income + Education + Gender + household+ Relationship, data = Data)
+                           Picky_Score_log * Emotional_Score_log+ SNAP + Sex + Income + Education + Relation + household+ Relationship + num_children, data = Data)
 
 
 # Summarize the linear regression model

@@ -81,20 +81,24 @@ com1 <- com1 %>%
                                                      ifelse(Var1 == "Less than $20,000", 1,Numeric)))))))
 
 com1 <- com1 %>%
-  mutate(EducationNumeric = ifelse(Var1 == "Advanced degree", 5,
+  mutate(Numeric = ifelse(Var1 == "Advanced degree", 5,
                                    ifelse(Var1 == "4 years college degree", 4,
                                             ifelse(Var1 == "Some college or associates degree", 3,
                                                  ifelse(Var1== "High school degree or GED", 2,
                                                         ifelse(Var1 == "Some high school", 1, Numeric))))))
 
 com1 <- com1 %>%
-  mutate(RelationshipNumeric = ifelse(Var1 == "Married", 1,
+  mutate(Numeric = ifelse(Var1 == "Married", 1,
                               ifelse(Var1 == "Divorced", 2,
                                      ifelse(Var1 == "Separated", 3,
                                             ifelse(Var1 == "Widowed", 4,
                                                    ifelse(Var1 == "Never married", 5, Numeric))))))
 
-
+com1 <- com1 %>%
+  mutate(Numeric = ifelse(Var1 == "Father", 1,
+                            ifelse(Var1== "Mother", 2,
+                                   ifelse(Var1 == "Other", 3 , 
+Numeric))))
 
 write.csv(com1, "DataDictionarySheet1.csv", row.names = FALSE)
 ```
@@ -160,7 +164,7 @@ com2 <- com2 %>%
 ```
 
 ```{r}
-# Define the mapping from relationship levels to numeric values
+# Define the mapping from parents relationship levels to numeric values
 relationship_map <- c("Never married" = 5, 
                       "Married" = 1, 
                       "Divorced" = 2, 
@@ -170,6 +174,29 @@ relationship_map <- c("Never married" = 5,
 # Convert text responses to numeric values for Relationship status
 com2 <- com2 %>%
   mutate(NumericRelationship = relationship_map[relationship])
+
+```
+
+```{r}
+# Define the mapping from childs_ parents relationship levels to numeric values
+relation_map <- c("Father" = 1, "Mother" = 2, "Other" = 3)
+
+# Assuming 'com2' is your data frame and 'relation' is the column with these responses
+com2 <- com2 %>%
+  mutate(NumericRelation = relation_map[parent])
+
+```
+
+
+```{r}
+
+# Define the mapping from sex categories to numeric values (only male and female)
+sex_map <- c("Male" = 1, "Female" = 2)
+
+# Assuming 'com2' is your data frame and 'sex' is the column with these responses
+com2 <- com2 %>%
+  mutate(NumericSex = sex_map[sex])
+
 
 ```
 
@@ -234,7 +261,7 @@ control_Age <- com2 %>%
     SD = sd(Age, na.rm = TRUE)
   )
 
-#Calculate statistics for income, education ,and marrital status
+#Calculate statistics for income, education ,and marital status, child-parent relation, child_sex
 calculate_stats <- function(data_vector) {
     if (!is.numeric(data_vector)) {
         stop("Data must be numeric.")
@@ -253,12 +280,15 @@ calculate_stats <- function(data_vector) {
 income_stats <- calculate_stats(com2$NumericIncome)
 # Calculate statistics for education
 education_stats <- calculate_stats(com2$NumericEducation)
-#calculate statistical for martital status
+#calculate statistical for martial status
 relationship_stats <- calculate_stats(com2$NumericRelationship)
+#calculate statistical for Child_parent  status
+relation_stats <- calculate_stats(com2$NumericRelation)
+#calculate statistical for Child_parent  status
+sex_stats <- calculate_stats(com2$NumericSex)
 
 
-# summarize without worrying about NA values
-
+#calculate statistical for household
 
 control_household <- com2 %>%
   summarise(
@@ -269,8 +299,15 @@ control_household <- com2 %>%
   )
 
 
+#calculate statistical for child number
 
-
+control_childnum <- com2 %>%
+  summarise(
+    Mean = mean(as.numeric(num_children), na.rm = TRUE),
+    Median = median(num_children, na.rm = TRUE),
+    Min = min(num_children, na.rm = TRUE),
+    SD = sd(num_children, na.rm = TRUE)
+  )
 
 
 ```
@@ -290,7 +327,14 @@ Surveys_CEP_stats$picky_stats<-picky_stats
 Surveys_CEP_stats$income_stats<-income_stats
 Surveys_CEP_stats$education_stats<-education_stats
 Surveys_CEP_stats$control_household<-control_household
+Surveys_CEP_stats$control_childnum<-control_childnum
 Surveys_CEP_stats$relationship_stats<-relationship_stats
+Surveys_CEP_stats$relation_stats<-relation_stats
+Surveys_CEP_stats$sex_stats<-sex_stats
+
+
+
+
 # Create a data frame
 A <- data.frame(
   Mean = numeric(),
@@ -315,7 +359,10 @@ ind <- grepl("SD$", names(df))
 A[1:length(df[1,ind]), "SD"] <- t(df[1,ind])
 
 # Add identifiers
-identifiers <- c("PFSQ5","PFSQ17", "PFSQ18","PFSQ20", "PFSQ24", "PFSQ26", "PFSQ25",  "PFSQ21",  "PFSQ22", "PFSQ15", "PFSQ13","PFSQ2","CEBQ32","CEBQ24","CEBQ16","CEBQ10","CEBQ7","control_Age","control_stats","emotional_stats","picky_stats","income_stats","education_stats","control_household","relationship_stats")
+identifiers <- c("PFSQ5","PFSQ17", "PFSQ18","PFSQ20", "PFSQ24", "PFSQ26", "PFSQ25",  "PFSQ21","PFSQ22", "PFSQ15","PFSQ13","PFSQ2","CEBQ32","CEBQ24","CEBQ16","CEBQ10","CEBQ7","control_Age","control_stats","emotional_stats","picky_stats","income_stats", "education_stats" ,"control_household","relationship_stats" , "control_childnum","relation_stats" , "sex_stats")
+
+print(A$Question)
+
 A$Question <- identifiers
 Survey<- A[,c(5,1:4)]
 # Write the data frame to a CSV file
