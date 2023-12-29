@@ -252,7 +252,7 @@ ECfinal <- ECfinal %>%
 
 Mediation
 
-
+Model 1 and multicllinearity test
 ```{r}
 
 # Mediation analysis with interactions
@@ -271,7 +271,13 @@ med_fit <- mediate(mediator_model, outcome_model,
 
 # Summary of Mediation Analysis
 summary(med_fit)
+```
 
+Check Multicollinearity model 1
+
+
+
+```{r}
 #Check Multicollinearity model
 
 numeric_predictors <- c("Control_Score_log", "Sex", "Relationship", "Income", "Education", "Relation", "household", "num_children")
@@ -283,9 +289,13 @@ multicollinearity_model <- lm(ECfinal$Picky_Score ~ ., data = ECfinal[numeric_pr
 vif_values <- vif(multicollinearity_model)
 print(vif_values)
 
+```
 
+Mediation
 
+Model 2 and multicllinearity test
 
+```{r}
 
 
 #model2
@@ -303,6 +313,11 @@ med_fit2 <- mediate(mediator_model2, outcome_model2, treat = c("Emotional_Score_
 # View the summary of mediation analysis
 summary(med_fit2)
 
+```
+
+Check Multicollinearity model 2
+
+```{r}
 
 #Check Multicollinearity model
 
@@ -370,7 +385,7 @@ tBMI <- shapiro.test(Data$BMIpercentile)
 print(tBMI)
 
 
-# Apply the arcsine transformation for proportions
+# Apply the arcsine transformation for normality
 Data$BMIpercentile_a <- asin(sqrt(Data$BMIpercentile))
 tBMI_arcsine <- shapiro.test(Data$BMIpercentile_a)
 print(tBMI_arcsine)
@@ -381,11 +396,9 @@ print(tBMI_arcsine)
 ```
 
 
-LM
-
+Linear regression for BMI, control and picky eating:model1
 ```{r}
 
-# BMI, control and picky eating
 # Fit a linear regression model
 lm <- lm(BMIpercentile_a ~ Picky_Score_log + Control_Score_log + 
                 Picky_Score_log * Control_Score_log + SNAP + 
@@ -393,18 +406,20 @@ lm <- lm(BMIpercentile_a ~ Picky_Score_log + Control_Score_log +
 
 # Summarize the linear regression model
 summary(lm)
+```
 
+Test Multicollinearity for model 1
+```{r}
 # Calculate GVIFs
 vif_values <- car::vif(lm, type = "predictor")
 
 # View the GVIF values
 print(vif_values)
 
+```
+Linear regression for BMI, emotional and picky eating:model2
 
-
-
-
-
+```{r}
 # BMI, Emotional and picky eating
 lm2 <- lm(BMIpercentile_a ~ Picky_Score_log + Emotional_Score_log + 
                            Picky_Score_log * Emotional_Score_log+ SNAP + Sex + Income + Education + Relation + household+ Relationship + num_children, data = Data)
@@ -412,7 +427,11 @@ lm2 <- lm(BMIpercentile_a ~ Picky_Score_log + Emotional_Score_log +
 
 # Summarize the linear regression model
 summary(lm2)
+```
 
+
+Test Multicollinearity for model2
+```{r}
 
 # Calculate GVIFs
 vif_values2 <- car::vif(lm2, type = "predictor")
