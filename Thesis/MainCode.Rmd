@@ -431,6 +431,7 @@ Data <- Data %>%
     BMIpercentile > 0.95 ~ "Obese",
     TRUE ~ NA_character_  # for handling any missing or unexpected values
   ))
+print(Data$BMI_Category)
 
 ```
 
@@ -539,26 +540,20 @@ Diagram
 library(ggplot2)
 library(dplyr)
 
-# Categorize 'Picky_Score_log' into three groups (Low, Medium, High)
-Data <- Data %>%
-  mutate(Picky_Category = cut(Picky_Score_log,
-                              breaks = quantile(Picky_Score_log, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
-                              labels = c("Low", "Medium", "High"),
-                              include.lowest = TRUE))
-
-# Plot with separate regression lines for each level of picky eating and one for the overall data
-ggplot(Data, aes(x = Control_Score_log, y = BMIpercentile)) +
-  geom_point(aes(color = Picky_Category), alpha = 0.4) +  # Color code points based on picky eating category
+# Plot with separate regression lines for each level of BMI categories  and one for the overall data
+ggplot(Data, aes(x = Control_Score_log, y = Picky_Score_log)) +
+  geom_point(aes(color = BMI_Category)) + 
   geom_smooth(method = "lm", formula = y ~ x, se = FALSE, linetype = "dotted", color = "black") +  # Overall regression line
-  geom_smooth(data = Data %>% filter(Picky_Category == "Low"), method = "lm", formula = y ~ x, se = FALSE, color = "blue") +
-  geom_smooth(data = Data %>% filter(Picky_Category == "Medium"), method = "lm", formula = y ~ x, se = FALSE, color = "green") +
-  geom_smooth(data = Data %>% filter(Picky_Category == "High"), method = "lm", formula = y ~ x, se = FALSE, color = "red") +
-  labs(title = "Control Score vs. BMI Percentile Across Picky Eating Categories",
+  geom_smooth(data = Data %>% filter(BMI_Category== "Obese"), method = "lm", formula = y ~ x, se = FALSE, color = "blue") +
+    geom_smooth(data = Data %>% filter(BMI_Category== "Underweight"), method = "lm", formula = y ~ x, se = FALSE, color = "yellow") +
+  geom_smooth(data = Data %>% filter(BMI_Category == "Overweight"), method = "lm", formula = y ~ x, se = FALSE, color = "green") +
+  geom_smooth(data = Data %>% filter(BMI_Category == "Normal"), method = "lm", formula = y~ x, se = FALSE, color = "red") +
+  labs(title = "Control Score vs.Picky Eating Categories  Across BMI Category",
        x = "Control Score (log-transformed)", 
-       y = "BMI Percentile",
-       color = "Picky Eating Category") +
+       y = "Picky Eating Category",
+       color = "BMI category") +
   theme_minimal() +
-  scale_color_manual(values = c("Low" = "blue", "Medium" = "green", "High" = "red"))
+  scale_color_manual(values = c("Obese" = "blue", "Underweight" = "yellow", "Overweight" = "green", "Normal" = "red"))
  
 ```
 
