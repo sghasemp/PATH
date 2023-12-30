@@ -273,6 +273,27 @@ med_fit <- mediate(mediator_model, outcome_model,
 summary(med_fit)
 ```
 
+```{r}
+# Scatter plot with regression line for Control Score and Picky Eating
+ggplot(ECfinal, aes(x = Control_Score_log, y = Picky_Score_log)) +
+  geom_point(aes(color = factor(SNAP))) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Control Score vs. Picky Eating by SNAP",
+       x = "Control Score (log-transformed)", y = "Picky Eating Score (log-transformed)",
+       color = "SNAP") +
+  theme_minimal()
+
+
+```
+
+
+
+
+
+
+
+
+
 Check Multicollinearity model 1
 
 
@@ -315,6 +336,18 @@ summary(med_fit2)
 
 ```
 
+```{r}
+# Scatter plot with regression line for Emotional Score and Picky Eating
+ggplot(ECfinal, aes(x = Emotional_Score_log, y = Picky_Score_log)) +
+  geom_point(aes(color = factor(SNAP))) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Emotional Score vs. Picky Eating by SNAP",
+       x = "Emotional Score (log-transformed)", y = "Picky Eating Score (log-transformed)",
+       color = "SNAP") +
+  theme_minimal()
+
+
+```
 Check Multicollinearity model 2
 
 ```{r}
@@ -334,9 +367,7 @@ print(vif_values2)
 
 ```
 
-
-
- relationship between parental feeding style, child picky eating and BMI
+****************relationship between parental feeding style, child picky eating and BMI
 
 ```{r}
 #library
@@ -492,6 +523,24 @@ summary(glm_Normal)
 
 
 ```
+```{r}
+library(ggplot2)
+
+# Plot with a continuous color gradient based on Picky_Score_log
+ggplot(Data, aes(x = Control_Score_log, y = BMI, color = Picky_Score_log)) +
+  geom_point(alpha = 0.6) +  # Adding points with some transparency
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) +  # Linear model line for overall trend
+  scale_color_gradient(low = "blue", high = "red") +  # Continuous color gradient
+  labs(title = "Effect of Picky Eating on the Relationship between Control and Child's BMI",
+       x = "Control Score (log-transformed)", 
+       y = "Child's BMI", 
+       color = "Picky Eating Score (log-transformed)") +
+  theme_minimal()
+
+```
+
+
+
 
 
 Test Multicollinearity for model 1
