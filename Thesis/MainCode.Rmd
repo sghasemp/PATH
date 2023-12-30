@@ -273,22 +273,24 @@ med_fit <- mediate(mediator_model, outcome_model,
 summary(med_fit)
 ```
 
+
+Diagram for model 1
 ```{r}
-# Scatter plot with regression line for Control Score and Picky Eating
-ggplot(ECfinal, aes(x = Control_Score_log, y = Picky_Score_log)) +
-  geom_point(aes(color = factor(SNAP))) +
-  geom_smooth(method = "lm", se = FALSE) +
+
+library(ggplot2)
+
+# Scatter plot with separate regression lines for SNAP 0 and SNAP 1
+ggplot(ECfinal, aes(x = Control_Score_log, y = Picky_Score_log, color = factor(SNAP))) +
+  geom_point() +  # Add points
+  geom_smooth(method = "lm", se = FALSE, aes(group = factor(SNAP))) +  # Add separate regression lines for each SNAP group
   labs(title = "Control Score vs. Picky Eating by SNAP",
        x = "Control Score (log-transformed)", y = "Picky Eating Score (log-transformed)",
-       color = "SNAP") +
-  theme_minimal()
+       color = "SNAP Status") +
+  theme_minimal() +
+  scale_color_manual(values = c("blue", "red"))  # Specify colors for SNAP 0 and SNAP 1
 
 
 ```
-
-
-
-
 
 
 
@@ -336,15 +338,20 @@ summary(med_fit2)
 
 ```
 
+Diagram for model 2
+
 ```{r}
-# Scatter plot with regression line for Emotional Score and Picky Eating
-ggplot(ECfinal, aes(x = Emotional_Score_log, y = Picky_Score_log)) +
-  geom_point(aes(color = factor(SNAP))) +
-  geom_smooth(method = "lm", se = FALSE) +
+
+# Scatter plot with separate regression lines for SNAP 0 and SNAP 1
+ggplot(ECfinal, aes(x = Emotional_Score_log, y = Picky_Score_log, color = factor(SNAP))) +
+  geom_point() +  
+  geom_smooth(method = "lm", se = FALSE, aes(group = factor(SNAP))) +  # Add separate regression lines for each SNAP group
   labs(title = "Emotional Score vs. Picky Eating by SNAP",
        x = "Emotional Score (log-transformed)", y = "Picky Eating Score (log-transformed)",
-       color = "SNAP") +
-  theme_minimal()
+       color = "SNAP Status") +
+  theme_minimal() +
+  scale_color_manual(values = c("blue", "red"))  # Specify colors for SNAP 0 and SNAP 1
+
 
 
 ```
@@ -523,20 +530,36 @@ summary(glm_Normal)
 
 
 ```
+
+
+
+Diagram
 ```{r}
+
 library(ggplot2)
+library(dplyr)
 
-# Plot with a continuous color gradient based on Picky_Score_log
-ggplot(Data, aes(x = Control_Score_log, y = BMI, color = Picky_Score_log)) +
-  geom_point(alpha = 0.6) +  # Adding points with some transparency
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) +  # Linear model line for overall trend
-  scale_color_gradient(low = "blue", high = "red") +  # Continuous color gradient
-  labs(title = "Effect of Picky Eating on the Relationship between Control and Child's BMI",
+# Categorize 'Picky_Score_log' into three groups (Low, Medium, High)
+Data <- Data %>%
+  mutate(Picky_Category = cut(Picky_Score_log,
+                              breaks = quantile(Picky_Score_log, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+                              labels = c("Low", "Medium", "High"),
+                              include.lowest = TRUE))
+
+# Plot with separate regression lines for each level of picky eating and one for the overall data
+ggplot(Data, aes(x = Control_Score_log, y = BMIpercentile)) +
+  geom_point(aes(color = Picky_Category), alpha = 0.4) +  # Color code points based on picky eating category
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE, linetype = "dotted", color = "black") +  # Overall regression line
+  geom_smooth(data = Data %>% filter(Picky_Category == "Low"), method = "lm", formula = y ~ x, se = FALSE, color = "blue") +
+  geom_smooth(data = Data %>% filter(Picky_Category == "Medium"), method = "lm", formula = y ~ x, se = FALSE, color = "green") +
+  geom_smooth(data = Data %>% filter(Picky_Category == "High"), method = "lm", formula = y ~ x, se = FALSE, color = "red") +
+  labs(title = "Control Score vs. BMI Percentile Across Picky Eating Categories",
        x = "Control Score (log-transformed)", 
-       y = "Child's BMI", 
-       color = "Picky Eating Score (log-transformed)") +
-  theme_minimal()
-
+       y = "BMI Percentile",
+       color = "Picky Eating Category") +
+  theme_minimal() +
+  scale_color_manual(values = c("Low" = "blue", "Medium" = "green", "High" = "red"))
+ 
 ```
 
 
