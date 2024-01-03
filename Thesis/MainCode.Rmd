@@ -168,6 +168,7 @@ relationship_map <- c("Never married" = 5,
 ECfinal <- ECfinal %>%
   mutate(Relationship = relationship_map[relationship])
 
+
 ```
 
 
@@ -422,357 +423,104 @@ Data$BMIpercentile <- sds(
 
 ```
 
-**** I used 2 ways ,you can see both of them , I am not sure which one is correct , firstly, two categorical BMI percentile ,and  then four Categorical BMI Percentile)
-
----------------1- two Categorical BMI percentile--------------------------------
-
-
-Categorizing BMI 
 
 ```{r}
-
-Data$BMICat <- ifelse(Data$BMIpercentile > 0.85, 1, 0)
-#1= over weigh and obesity
-#2.Not
+# Apply the arcsine transformation for normality
+Data$BMIp <- asin(sqrt(Data$BMIpercentile))
+tBMI_arcsine <- shapiro.test(Data$BMIp)
+print(tBMI_arcsine)
 ```
-
-Doing GLM for  BMI picky eating and Control feeding
+Linear regression for model 1
 ```{r}
 
-# Fit the logistic regression model
-glm_model <- glm(BMICat ~ Picky_Score_log + Control_Score_log +
-                 Picky_Score_log * Control_Score_log + SNAP + 
-                 Sex+ Education + Relation + household + 
-                 Relationship + num_children, 
-                 family = binomial(link = "logit"), data = Data)
-
-# Summary of the model
-summary(glm_model)
+ lm <- lm(BMIp~ Picky_Score_log + Control_Score_log + 
+                Picky_Score_log * Control_Score_log + SNAP + 
+              Sex + Income + Education + Relation + household+ Relationship +num_children, data = Data)
+summary(lm)
 
 ```
-
-
-PLOT for  BMI picky eating and Control feeding
-```{r}
-
-# Scatter plot with separate regression lines for BMI
-ggplot(Data, aes(x = Control_Score_log, y = Picky_Score_log, color = factor(BMICat))) +
-  geom_point() +  
-  geom_smooth(method = "lm", se = FALSE, aes(group = factor(BMICat))) +  # Add separate regression lines for each BMICat group
-  labs(title = "Control Score vs. Picky Eating by BMI Category",
-       x = "Control Score (log-transformed)", y = "Picky Eating Score",
-       color = "BMI Category") +
-  theme_minimal() +
-  scale_color_manual(values = c("0" = "blue", "1" = "red"), 
-                     labels = c("0" = "Not Obese/Overweight", "1" = "Obese/Overweight"))  # Specify colors and labels for BMICat 0 and BMICat 1
-
-
-
-```
-
-Doing GLM for  BMI picky eating and Emotional feeding
-```{r}
-
-# Fit the logistic regression model
-glm_model2 <- glm(BMICat ~ Picky_Score_log + Emotional_Score_log +
-                 Picky_Score_log * Emotional_Score_log + SNAP + 
-                 Sex+ Education + Relation + household + 
-                 Relationship + num_children, 
-                 family = binomial(link = "logit"), data = Data)
-
-# Summary of the model
-summary(glm_model2)
-
-```
-
-
-
-PLOT  for  BMI picky eating and Emotional feeding
-```{r}
-
-# Scatter plot with separate regression lines for BMI
-ggplot(Data, aes(x = Emotional_Score_log, y = Picky_Score_log, color = factor(BMICat))) +
-  geom_point() +  
-  geom_smooth(method = "lm", se = FALSE, aes(group = factor(BMICat))) +  # Add separate regression lines for each BMICat group
-  labs(title = "Emotional Score vs. Picky Eating by BMI Category",
-       x = "Emotional Score (log-transformed)", y = "Picky Eating Score",
-       color = "BMI Category") +
-  theme_minimal() +
-  scale_color_manual(values = c("0" = "blue", "1" = "red"), 
-                     labels = c("0" = "Not Obese/Overweight", "1" = "Obese/Overweight"))  # Specify colors and labels for BMICat 0 and BMICat 1
-
-```
-
-
-
-
---------------------.Evaluation based on four Categorical BMI---------------------------
-
-Categorizing BMI 
-```{r}
-Data <- Data %>%
-  mutate(BMI_Category = case_when(
-    BMIpercentile < 0.05 ~ "Underweight",
-    BMIpercentile >= 0.05 & BMIpercentile <= 0.85 ~ "Normal",
-    BMIpercentile > 0.85 & BMIpercentile <= 0.95 ~ "Overweight",
-    BMIpercentile > 0.95 ~ "Obese",
-    TRUE ~ NA_character_  # for handling any missing or unexpected values
-  ))
-print(Data$BMI_Category)
-
-```
-
-
-
-*********
- PLEASE pay attestation Just Run one of the  following way1 or2  for the first and second model.I don't know which one is correct.
- 
- *******
- 
-FIRST WAY TO FIT THE MODEL 1
-
-Doing Multiple logistic regression for  categorical BMI, control and picky eating:model1
-```{r}
-
-# Ensure BMI_Category is a factor
-Data$BMI_Category <- as.factor(Data$BMI_Category)
-
-# Fit a multinomial logistic regression model
-multinom_model <- multinom(BMI_Category ~ Picky_Score_log + Control_Score_log +
-                           Picky_Score_log * Control_Score_log + SNAP + 
-                           Sex + Income + Education + Relation + household + 
-                           Relationship + num_children, data = Data)
-
-# Summarize the multinomial logistic regression model
-summary(multinom_model) 
-
-
-model_summary <- summary(multinom_model)
-
-# Extract coefficients and standard errors
-coefficients <- coef(model_summary)
-standard_errors <- model_summary$standard.errors
-
-# Calculate z-values
-z_values <- coefficients / standard_errors
-
-# Calculate p-values
-p_values <- 2 * (1 - pnorm(abs(z_values)))
-
-print(p_values)
-
-
-```
-
-
-
-SECOND WAY TO FIT THE MODEL 1
-GLM for BMI, control and picky eating
-
-```{r}
-
-# Ensure BMI_Category is a factor
-Data$BMI_Category <- as.factor(Data$BMI_Category)
-
-# Create binary outcome variables
-Data$Obese <- as.numeric(Data$BMI_Category == "Obese")
-Data$Overweight <- as.numeric(Data$BMI_Category == "Overweight")
-Data$Underweight <- as.numeric(Data$BMI_Category == "Underweight")
-Data$Normal <- as.numeric(Data$BMI_Category == "Normal")
-# Fit GLM for Obese
-glm_obese <- glm(Obese ~ Picky_Score_log + Control_Score_log +
-                 Picky_Score_log * Control_Score_log + SNAP + 
-                 Sex + Income + Education + Relation + household + 
-                 Relationship + num_children, 
-                 family = binomial, data = Data)
-summary(glm_obese)
-
-# Fit GLM for Overweight
-glm_overweight <- glm(Overweight ~ Picky_Score_log + Control_Score_log +
-                      Picky_Score_log * Control_Score_log + SNAP + 
-                      Sex + Income + Education + Relation + household + 
-                      Relationship + num_children, 
-                      family = binomial, data = Data)
-summary(glm_overweight)
-
-# Fit GLM for Underweight
-glm_underweight <- glm(Underweight ~ Picky_Score_log + Control_Score_log +
-                       Picky_Score_log * Control_Score_log + SNAP + 
-                       Sex + Income + Education + Relation + household + 
-                       Relationship + num_children, 
-                       family = binomial, data = Data)
-summary(glm_underweight)
-# Fit GLM for Underweight
-glm_Normal <- glm(Normal ~ Picky_Score_log + Control_Score_log +
-                       Picky_Score_log * Control_Score_log + SNAP + 
-                       Sex + Income + Education + Relation + household + 
-                       Relationship + num_children, 
-                       family = binomial, data = Data)
-summary(glm_Normal)
-
-
-```
-
 
 Diagram
+
 ```{r}
 
 
-# Plot with separate regression lines for each level of BMI categories  and one for the overall data
-ggplot(Data, aes(x = Control_Score_log, y = Picky_Score_log)) +
-  geom_point(aes(color = BMI_Category)) + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE, linetype = "dotted", color = "black") +  # Overall regression line
-  geom_smooth(data = Data %>% filter(BMI_Category== "Obese"), method = "lm", formula = y ~ x, se = FALSE, color = "blue") +
-    geom_smooth(data = Data %>% filter(BMI_Category== "Underweight"), method = "lm", formula = y ~ x, se = FALSE, color = "yellow") +
-  geom_smooth(data = Data %>% filter(BMI_Category == "Overweight"), method = "lm", formula = y ~ x, se = FALSE, color = "green") +
-  geom_smooth(data = Data %>% filter(BMI_Category == "Normal"), method = "lm", formula = y~ x, se = FALSE, color = "red") +
-  labs(title = "Control Score vs.Picky Eating Categories  Across BMI Category",
+# Categorize Picky Eating Score into three categories: high, medium, low
+Data <- Data %>%
+  mutate(Picky_Category = case_when(
+    Picky_Score_log > quantile(Picky_Score_log, 0.66) ~ "High",
+    Picky_Score_log > quantile(Picky_Score_log, 0.33) ~ "Medium",
+    TRUE ~ "Low"
+  ))
+
+# Plot BMI vs. Emotional Score with categorized Picky Eating Score and separate strict regression lines
+ggplot(Data, aes(x = Control_Score_log, y = BMIp, color = Picky_Category)) +
+  geom_point() + 
+  geom_smooth(aes(group = Picky_Category, color = Picky_Category), 
+              method = "lm", formula = y ~ x, se = FALSE, linetype = "solid") +
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE, linetype = "solid", color = "black") + # Overall regression line
+  labs(title = "BMI vs. Control Score",
        x = "Control Score (log-transformed)", 
-       y = "Picky Eating Category",
-       color = "BMI category") +
-  theme_minimal() +
-  scale_color_manual(values = c("Obese" = "blue", "Underweight" = "yellow", "Overweight" = "green", "Normal" = "red"))
- 
+       y = "BMI",
+       color = "Picky Eating Category") +
+  scale_color_manual(values = c("Low" = "blue", "Medium" = "green", "High" = "red"),
+                     name = "Picky Eating Category") +
+  annotate("text", x = max(Data$Control_Score_log), y = min(Data$BMI), 
+           label = "Overall Effect of Picky Eating", hjust = 1, vjust = 0) +
+  theme_minimal()
+
+
 ```
-
-
-
-
-
-Test Multicollinearity for model 1
-
 ```{r}
+ 
 # Calculate the correlation matrix of predictors
-correlation_matrix <- cor(Data[c("Picky_Score_log", "Control_Score_log", "SNAP", "Sex", "Income", "Education", "Relation", "household", "Relationship", "num_children")])
-
-# View the correlation matrix
+ correlation_matrix <- cor(Data[c("Picky_Score_log", "Control_Score_log", "SNAP", "Sex", "Income", "Education", "Relation", "household", "Relationship", "num_children")])
+ 
+ # View the correlation matrix
 print(correlation_matrix)
 
+```
+Linear regression for model 2
+```{r}
+
+ lm2 <- lm(BMIp~ Picky_Score_log + Emotional_Score_log + 
+                Picky_Score_log * Emotional_Score_log + SNAP + 
+              Sex + Income + Education + Relation + household+ Relationship +num_children, data = Data)
+summary(lm2)
 
 ```
 
-FIRST WAY TO FIT THE MODEL 2
-
-Doing Multiple logistic regression for  categorical BMI, Emotional and picky eating
-```{r}
-
-# Ensure BMI_Category is a factor
-Data$BMI_Category <- as.factor(Data$BMI_Category)
-
-# Fit a multinomial logistic regression model
-multinom_model2 <- multinom(BMI_Category ~ Picky_Score_log + Emotional_Score_log +
-                           Picky_Score_log * Emotional_Score_log + SNAP + 
-                           Sex + Income + Education + Relation + household + 
-                           Relationship + num_children, data = Data)
-
-# Summarize the multinomial logistic regression model
-summary(multinom_model2) 
-
-
-model_summary2 <- summary(multinom_model2)
-
-# Extract coefficients and standard errors
-coefficients2 <- coef(model_summary2)
-standard_errors2 <- model_summary$standard.errors2
-
-# Calculate z-values
-z_values2 <- coefficients2 / standard_errors2
-
-# Calculate p-values
-p_values2 <- 2 * (1 - pnorm(abs(z_values2)))
-
-print(p_values2)
-
-
-```
-
-
-
-
-SECOND WAY TO FIT THE MODEL 2
-GLM for BMI, Emotional and picky eating
+Diagram
 
 ```{r}
 
-# Ensure BMI_Category is a factor
-Data$BMI_Category <- as.factor(Data$BMI_Category)
-
-# Create binary outcome variables
-Data$Obese <- as.numeric(Data$BMI_Category == "Obese")
-Data$Overweight <- as.numeric(Data$BMI_Category == "Overweight")
-Data$Underweight <- as.numeric(Data$BMI_Category == "Underweight")
-Data$Normal <- as.numeric(Data$BMI_Category == "Normal")
-# Fit GLM for Obese
-glm_obese2 <- glm(Obese ~ Picky_Score_log + Emotional_Score_log +
-                 Picky_Score_log * Control_Score_log + SNAP + 
-                 Sex + Income + Education + Relation + household + 
-                 Relationship + num_children, 
-                 family = binomial, data = Data)
-summary(glm_obese2)
-
-# Fit GLM for Overweight
-glm_overweight2 <- glm(Overweight ~ Picky_Score_log + Emotional_Score_log +
-                      Picky_Score_log * Control_Score_log + SNAP + 
-                      Sex + Income + Education + Relation + household + 
-                      Relationship + num_children, 
-                      family = binomial, data = Data)
-summary(glm_overweight2)
-
-# Fit GLM for Underweight
-glm_underweight2 <- glm(Underweight ~ Picky_Score_log + Emotional_Score_log +
-                       Picky_Score_log * Control_Score_log + SNAP + 
-                       Sex + Income + Education + Relation + household + 
-                       Relationship + num_children, 
-                       family = binomial, data = Data)
-summary(glm_underweight2)
-# Fit GLM for Underweight
-glm_Normal2 <- glm(Normal ~ Picky_Score_log + Emotional_Score_log +
-                       Picky_Score_log * Control_Score_log + SNAP + 
-                       Sex + Income + Education + Relation + household + 
-                       Relationship + num_children, 
-                       family = binomial, data = Data)
-summary(glm_Normal2)
-
-
-```
-
-
-Diagram for model 2, 
-
-
-```{r}
-
-
-# Plot with separate regression lines for each level of BMI categories  and one for the overall data
-ggplot(Data, aes(x = Emotional_Score_log, y = Picky_Score_log)) +
-  geom_point(aes(color = BMI_Category)) + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE, linetype = "dotted", color = "black") +  # Overall regression line
-  geom_smooth(data = Data %>% filter(BMI_Category== "Obese"), method = "lm", formula = y ~ x, se = FALSE, color = "blue") +
-    geom_smooth(data = Data %>% filter(BMI_Category== "Underweight"), method = "lm", formula = y ~ x, se = FALSE, color = "yellow") +
-  geom_smooth(data = Data %>% filter(BMI_Category == "Overweight"), method = "lm", formula = y ~ x, se = FALSE, color = "green") +
-  geom_smooth(data = Data %>% filter(BMI_Category == "Normal"), method = "lm", formula = y~ x, se = FALSE, color = "red") +
-  labs(title = "Emotional Score vs.Picky Eating Categories  Across BMI Category",
+# Plot BMI vs. Emotional Score with categorized Picky Eating Score and separate strict regression lines
+ggplot(Data, aes(x = Emotional_Score_log, y = BMIp, color = Picky_Category)) +
+  geom_point() + 
+  geom_smooth(aes(group = Picky_Category, color = Picky_Category), 
+              method = "lm", formula = y ~ x, se = FALSE, linetype = "solid") +
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE, linetype = "solid", color = "black") + # Overall regression line
+  labs(title = "BMI vs. Emotional Score",
        x = "Emotional Score (log-transformed)", 
-       y = "Picky Eating Category",
-       color = "BMI category") +
-  theme_minimal() +
-  scale_color_manual(values = c("Obese" = "blue", "Underweight" = "yellow", "Overweight" = "green", "Normal" = "red"))
- 
+       y = "BMI",
+       color = "Picky Eating Category") +
+  scale_color_manual(values = c("Low" = "blue", "Medium" = "green", "High" = "red"),
+                     name = "Picky Eating Category") +
+  annotate("text", x = max(Data$Emotional_Score_log), y = min(Data$BMI), 
+           label = "Overall Effect of Picky Eating", hjust = 1, vjust = 0) +
+  theme_minimal()
+
+
 ```
-
-Test Multicollinearity for model 2
-
 ```{r}
+ 
 # Calculate the correlation matrix of predictors
-correlation_matrix <- cor(Data[c("Picky_Score_log", "Emotional_Score_log", "SNAP", "Sex", "Income", "Education", "Relation", "household", "Relationship", "num_children")])
-
-# View the correlation matrix
+ correlation_matrix <- cor(Data[c("Picky_Score_log", "Emotional_Score_log", "SNAP", "Sex", "Income", "Education", "Relation", "household", "Relationship", "num_children")])
+ 
+ # View the correlation matrix
 print(correlation_matrix)
 
 ```
-
-
-
 
 
 
