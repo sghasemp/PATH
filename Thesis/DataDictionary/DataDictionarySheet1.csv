@@ -47,9 +47,8 @@
 "relationship","Are you...","Widowed",2,4
 "relationship","Are you...","Separated",3,3
 "relationship","Are you...","Never married",10,5
-"relationship","Are you...","Married",150,1
+"relationship","Are you...","Married",151,1
 "relationship","Are you...","Divorced",6,2
-"relationship","Are you...","",1,6
 "household","What is the total number of individuals in your household at this time?","7",6,1
 "household","What is the total number of individuals in your household at this time?","6",15,2
 "household","What is the total number of individuals in your household at this time?","5",40,3

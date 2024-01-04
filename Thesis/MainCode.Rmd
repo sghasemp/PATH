@@ -88,8 +88,10 @@ print(variables_to_test)
 normality_tests <- lapply(ECfinal[variables_to_test], shapiro.test)
 # Print the results
 print(normality_tests)
+```
 
 
+```{r}
 #QQplot
 
 variables_to_test <- c("Picky_Score", "Control_Score", "Emotional_Score")
@@ -105,15 +107,18 @@ for (variable in variables_to_test) {
   # Print the plot
   print(p)
 }
+```
 
 
-
+```{r}
 # Log transformation 
 
 ECfinal$Picky_Score_log <- log(ECfinal$Picky_Score + 1e-6)
 ECfinal$Control_Score_log <- log(ECfinal$Control_Score + 1e-6)
 ECfinal$Emotional_Score_log <- log(ECfinal$Emotional_Score + 1e-6)
+```
 
+```{r}
 
 #QQplot log
 
@@ -126,8 +131,12 @@ for (variable in variables_log) {
        stat_qq_line(colour = "blue") +
        ggtitle(paste("QQ Plot for", variable)) +
        theme_minimal()
-  
 }
+
+```
+
+
+```{r}
 # Shapiro-Wilk test for log-transformed variables
 shapiro_results_log <- lapply(ECfinal[variables_log], shapiro.test)
 
@@ -154,9 +163,8 @@ ECfinal$num_children <- as.numeric(as.character(ECfinal$num_children))
 
 ```
 
-
-
 Relationship
+
 ```{r}
 relationship_map <- c("Never married" = 5, 
                       "Married" = 1, 
@@ -171,10 +179,8 @@ ECfinal <- ECfinal %>%
 
 ```
 
+Race Ethnicity
 
-
-
-RaceEthnicity
 ```{r}
 # Create a data frame with the race data
 race_data <- data.frame(
@@ -193,7 +199,7 @@ race_data$race_numeric <- as.numeric(factor(race_data$race_category,
 ```
 
 
-ParentEducation
+Parent Education
 ```{r}
 # Define the mapping from education levels to numeric values
 education_map <- c("Some high school" = 1, 
@@ -208,7 +214,7 @@ ECfinal <- ECfinal %>%
 
 ```
 
-HouseholdIncome
+Household Income
 ```{r}
 income_map <- c("Less than $20,000" = 1, 
                 "$20,000 - $39,999" = 2, 
@@ -373,7 +379,6 @@ multicollinearity_model2 <- lm(ECfinal$Picky_Score ~ ., data = ECfinal[numeric_p
 # Calculate VIF
 vif_values2 <- vif(multicollinearity_model2)
 print(vif_values2)
-
 
 ```
 
