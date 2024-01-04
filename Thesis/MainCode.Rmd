@@ -124,6 +124,7 @@ ECfinal$Emotional_Score_log <- log(ECfinal$Emotional_Score + 1e-6)
 
 variables_log <- c("Picky_Score_log", "Control_Score_log", "Emotional_Score_log")
 
+
 for (variable in variables_log) {
   # Create a QQ plot for each variable
   p <- ggplot(ECfinal, aes(sample = .data[[variable]])) +
@@ -131,8 +132,10 @@ for (variable in variables_log) {
        stat_qq_line(colour = "blue") +
        ggtitle(paste("QQ Plot for", variable)) +
        theme_minimal()
+  
+  # Print the plot
+  print(p)
 }
-
 ```
 
 
