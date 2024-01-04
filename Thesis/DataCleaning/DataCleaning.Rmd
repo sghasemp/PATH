@@ -84,7 +84,8 @@ write.csv(ECfinal, file = file_path, row.names = FALSE)
 Data Cleaning measurments
 
 ```{r}
-
+#library:
+library(dplyr)
 
 C1<- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/ECECcenter.csv")
 C2<- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/Lab.csv")
@@ -92,14 +93,15 @@ C3 <- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Deskt
 C4<- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/Open.csv")
 C5 <- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/South.csv")
 C6<- read.csv("C:/Users/sara ghasem pour/OneDrive - University of Wyoming/Desktop/THESIS/Surveys, data dictionary/Rowdata/Heads.csv")
-library(dplyr)
 
-CC1<- select(C1, -Age, -Gender)
-CC3<- select(C3, -Age, -Gender)
-CC4<- select(C4, -Age, -Gender)
-CC5<- select(C5, -Age, -Gender)
-CC6<- select(C6, -Age, -Gender)
-CC2<- select(C2, -SignedConsent, -ipad, -Printedconsent)
+CC1 <- C1[, !names(C1) %in% c("Age", "Gender")]
+CC3 <- C1[, !names(C3) %in% c("Age", "Gender")]
+CC4 <- C4[, !names(C4) %in% c("Age", "Gender")]
+CC6 <- C6[, !names(C6) %in% c("Age", "Gender")]
+CC5 <- C5[, !names(C5) %in% c("Age", "Gender")]
+
+CC2<- C2[, !names(C2) %in% c("SignedConsent", "ipad", "Printedconsent")]
+
 #combined measurements
 cmeasure <- rbind(CC1, CC2, CC3, CC4, CC5, CC6)
 
