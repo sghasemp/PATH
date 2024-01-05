@@ -70,13 +70,6 @@ ECfinal <- ECfinal %>%
 Checked the normality  
 
 
- picky _Score has  not normal distributed, I did :
- Log Transformation
- Square Root Transformation
- Inverse Transformation
- Box-Cox Transformation
- Yeo-Johnson Transformation
-
  
  
  
@@ -110,19 +103,23 @@ for (variable in variables_to_test) {
 ```
 
 
+
+
+
 ```{r}
 # Log transformation 
 
-ECfinal$Picky_Score_log <- log(ECfinal$Picky_Score + 1e-6)
 ECfinal$Control_Score_log <- log(ECfinal$Control_Score + 1e-6)
 ECfinal$Emotional_Score_log <- log(ECfinal$Emotional_Score + 1e-6)
 ```
+
+
 
 ```{r}
 
 #QQplot log
 
-variables_log <- c("Picky_Score_log", "Control_Score_log", "Emotional_Score_log")
+variables_log <- c( "Control_Score_log", "Emotional_Score_log")
 
 
 for (variable in variables_log) {
@@ -145,12 +142,26 @@ shapiro_results_log <- lapply(ECfinal[variables_log], shapiro.test)
 
 # Print the Shapiro-Wilk test results
 print(shapiro_results_log)
-
-
-
 ```
 
+ picky _Score has  not normal distributed, I did :
+ Log Transformation
+ Square Root Transformation
+ Inverse Transformation
+ Box-Cox Transformation
+ Yeo-Johnson Transformation
+ So I change Picky eating to categorical Data, LOW, MED, HIGH
+```{r}
+# Categorize Picky_Score into three categories: Low, Medium, High
+ECfinal <- ECfinal %>%
+  mutate(
+    Picky_Category = cut(Picky_Score,
+                         breaks = quantile(Picky_Score, probs = c(0, 0.33, 0.66, 1), na.rm = TRUE),
+                         labels = c("Low", "Medium", "High"),
+                         include.lowest = TRUE)
+  )
 
+```
 
 Household
 ```{r}
@@ -271,8 +282,8 @@ mediator_model <- glm(SNAP ~ Control_Score_log + Sex + Relationship+
                       family = binomial, data = ECfinal)
 
 # Step 2: Outcome Model
-outcome_model <- lm(Picky_Score_log ~ Control_Score_log + SNAP +
-                      Sex + Income + Education + Relation + household + Relationship + num_children , data = ECfinal)
+outcome_model <- glm(Picky_Category ~ Control_Score_log + SNAP +
+                      Sex + Income + Education + Relation + household + Relationship + num_children ,family = binomial, data = ECfinal)
 
 # Step 3: Perform Mediation Analysis
 med_fit <- mediate(mediator_model, outcome_model,
@@ -290,7 +301,7 @@ Diagram for model 1
 library(ggplot2)
 
 # Scatter plot with separate regression lines for SNAP 0 and SNAP 1
-ggplot(ECfinal, aes(x = Control_Score_log, y = Picky_Score_log, color = factor(SNAP))) +
+ggplot(ECfinal, aes(x = Control_Score_log, y = Picky_Score, color = factor(SNAP))) +
   geom_point() +  # Add points
   geom_smooth(method = "lm", se = FALSE, aes(group = factor(SNAP))) +  # Add separate regression lines for each SNAP group
   labs(title = "Control Score vs. Picky Eating by SNAP",
@@ -337,8 +348,8 @@ mediator_model2 <- glm(SNAP ~ Emotional_Score_log + Sex + Relationship+
                         Income + Education + Relation + household+num_children,
                       family = binomial, data = ECfinal)
 
-outcome_model2 <- lm(Picky_Score_log ~ Emotional_Score_log + SNAP + 
-              Sex + Income + Education + Relation + household+ Relationship +num_children ,data = ECfinal)
+outcome_model2 <- glm(Picky_Category ~ Emotional_Score_log + SNAP + 
+              Sex + Income + Education + Relation + household+ Relationship +num_children ,family = binomial, data = ECfinal)
 
 
 # Perform the mediation analysis
@@ -354,7 +365,7 @@ Diagram for model 2
 ```{r}
 
 # Scatter plot with separate regression lines for SNAP 0 and SNAP 1
-ggplot(ECfinal, aes(x = Emotional_Score_log, y = Picky_Score_log, color = factor(SNAP))) +
+ggplot(ECfinal, aes(x = Emotional_Score_log, y = Picky_Score, color = factor(SNAP))) +
   geom_point() +  
   geom_smooth(method = "lm", se = FALSE, aes(group = factor(SNAP))) +  # Add separate regression lines for each SNAP group
   labs(title = "Emotional Score vs. Picky Eating by SNAP",
@@ -431,35 +442,26 @@ Data$BMIpercentile <- sds(
 
 ```
 
-
+Normalize BMI Percentile
 ```{r}
 # Apply the arcsine transformation for normality
 Data$BMIp <- asin(sqrt(Data$BMIpercentile))
 tBMI_arcsine <- shapiro.test(Data$BMIp)
 print(tBMI_arcsine)
 ```
-Linear regression for model 1
+Linear regression for model 1: the relationship between interaction of Picky eating and Control feeding on Child BMI
 ```{r}
 
- lm <- lm(BMIp~ Picky_Score_log + Control_Score_log + 
-                Picky_Score_log * Control_Score_log + SNAP + 
+ lm <- lm(BMIp~ Picky_Category + Control_Score_log + 
+                Picky_Category* Control_Score_log + SNAP + 
               Sex + Income + Education + Relation + household+ Relationship +num_children, data = Data)
 summary(lm)
 
 ```
 
-Diagram
+Diagram model 1
 
 ```{r}
-
-
-# Categorize Picky Eating Score into three categories: high, medium, low
-Data <- Data %>%
-  mutate(Picky_Category = case_when(
-    Picky_Score_log > quantile(Picky_Score_log, 0.66) ~ "High",
-    Picky_Score_log > quantile(Picky_Score_log, 0.33) ~ "Medium",
-    TRUE ~ "Low"
-  ))
 
 # Plot BMI vs. Emotional Score with categorized Picky Eating Score and separate strict regression lines
 ggplot(Data, aes(x = Control_Score_log, y = BMIp, color = Picky_Category)) +
@@ -479,26 +481,29 @@ ggplot(Data, aes(x = Control_Score_log, y = BMIp, color = Picky_Category)) +
 
 
 ```
+
+ correlation matrix of predictors for model 1
+
 ```{r}
  
 # Calculate the correlation matrix of predictors
- correlation_matrix <- cor(Data[c("Picky_Score_log", "Control_Score_log", "SNAP", "Sex", "Income", "Education", "Relation", "household", "Relationship", "num_children")])
+ correlation_matrix <- cor(Data[c("Picky_Score", "Control_Score_log", "SNAP", "Sex", "Income", "Education", "Relation", "household", "Relationship", "num_children")])
  
  # View the correlation matrix
 print(correlation_matrix)
 
 ```
-Linear regression for model 2
+Linear regression for model relationship between BMI and interaction of Emotional eating and Picky eating: model 2
 ```{r}
 
- lm2 <- lm(BMIp~ Picky_Score_log + Emotional_Score_log + 
-                Picky_Score_log * Emotional_Score_log + SNAP + 
+ lm2 <- lm(BMIp~ Picky_Category + Emotional_Score_log + 
+                Picky_Category * Emotional_Score_log + SNAP + 
               Sex + Income + Education + Relation + household+ Relationship +num_children, data = Data)
 summary(lm2)
 
 ```
 
-Diagram
+Diagram model 2
 
 ```{r}
 
@@ -520,15 +525,20 @@ ggplot(Data, aes(x = Emotional_Score_log, y = BMIp, color = Picky_Category)) +
 
 
 ```
+
+correlation matrix of predictors for model 2
+
 ```{r}
  
 # Calculate the correlation matrix of predictors
- correlation_matrix <- cor(Data[c("Picky_Score_log", "Emotional_Score_log", "SNAP", "Sex", "Income", "Education", "Relation", "household", "Relationship", "num_children")])
+ correlation_matrix <- cor(Data[c("Picky_Score", "Emotional_Score_log", "SNAP", "Sex", "Income", "Education", "Relation", "household", "Relationship", "num_children")])
  
  # View the correlation matrix
 print(correlation_matrix)
 
 ```
+
+
 
 
 
