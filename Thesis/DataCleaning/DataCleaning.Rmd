@@ -8,9 +8,9 @@ date: "2023-12-17"
 #Library
 library(dplyr)
 #read date
-
-dataset <- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/RawData/EC_pre.csv")
-dataset2<- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/RawData/EC.csv")
+#Updoaded data from qualtrics
+dataset <- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/RawData/EC_pren.csv")
+dataset2<- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/RawData/ECn.csv")
 
 
 ```
@@ -18,21 +18,20 @@ dataset2<- read.csv("C:/Users/sara ghasem pour/GitLab/Path2/Thesis/RawData/EC.cs
 Data Cleaning survey
 
 ```{r }
+# Convert date columns to POSIXct format
+dataset$StartDate <- as.POSIXct(dataset$StartDate, format = "%Y-%m-%d")
+dataset$EndDate <- as.POSIXct(dataset$EndDate, format = "%Y-%m-%d")
+dataset2$StartDate <- as.POSIXct(dataset2$StartDate, format = "%Y-%m-%d")
+dataset2$EndDate <- as.POSIXct(dataset2$EndDate, format = "%Y-%m-%d")
 
-#Converting Date Columns
-dataset$StartDate <- as.POSIXct(dataset$StartDate, format = "%m/%d/%Y %H:%M")
-dataset$EndDate<- as.POSIXct(dataset$EndDate, format = "%m/%d/%Y %H:%M")
-dataset2$StartDate <- as.POSIXct(dataset2$StartDate, format = "%m/%d/%Y %H:%M")
-dataset2$EndDate<- as.POSIXct(dataset2$EndDate, format = "%m/%d/%Y %H:%M")
-
-
-# Define cutoff date 
-cutoff_date <- as.POSIXct("9/20/2023", format = "%m/%d/%Y")
+# Define cutoff date
+cutoff_date <- as.POSIXct("2023-09-19")
 
 # Filter out data for participants after the cutoff date
 filtered_data <- subset(dataset2, EndDate <= cutoff_date)
-#combined EC1 and EC2 
-ECcom <- rbind(dataset,filtered_data)
+
+# Combine dataset and filtered_data into ECcom
+ECcom <- rbind(dataset, filtered_data)
 
 # Calculate the difference in seconds between Start.Date and Recorded.Date
 ECcom$TimeDiff <- as.numeric(difftime(ECcom$EndDate, ECcom$StartDate, units = "secs"))
@@ -54,9 +53,14 @@ threshold <- 25
 # and add the first 9 rows back to the data
 ECfinal <- rbind(ECcom[1:2, ], ECcom[3:nrow(ECcom), ][narow <= threshold, ])
 
-# Convert dates to Date objects
-ECfinal$child_bday <- as.Date(ECfinal$child_bday, format="%m/%d/%Y") # adjust format as needed
-ECfinal$RecordedDate<- as.Date(ECfinal$RecordedDate, format="%m/%d/%Y") # adjust format as needed
+
+# Convert "m/d/y" to "y-m-d" format in ECfinal$child_bday column
+ECfinal$child_bday <- as.Date(ECfinal$child_bday, format = "%m/%d/%y")
+ECfinal$child_bday <- format(ECfinal$child_bday, "%Y-%m-%d")
+
+
+ECfinal$RecordedDate <- as.Date(ECfinal$RecordedDate, format="%Y-%m-%d")
+
 # Calculate age in years
 ECfinal$Age <- as.numeric(difftime(ECfinal$RecordedDate, ECfinal$child_bday, units="days")) / 365.25
 ECfinal$Age <- round(ECfinal$Age,0)
@@ -64,6 +68,9 @@ ECfinal$Age <- round(ECfinal$Age,0)
 #remove ages out more than 6 and less than 3
 ECfinal <- ECfinal[(!(ECfinal$Age > 6 | ECfinal$Age < 3)| is.na(ECfinal$Age)), ]
 
+
+# Remove the third row from ECfinal
+ECfinal <- ECfinal[-2, ]
 
 
 
