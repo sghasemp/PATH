@@ -46,7 +46,7 @@ EClist <- c("Always" = 5, "Often" = 4, "Sometimes" =3 , "Rarely" = 2, "Never" = 
 
 # List the question columns for each category based on the names you provided
 control_questions <- c("PFSQ5", "PFSQ17", "PFSQ18", "PFSQ20", "PFSQ24", "PFSQ26")
-emotional_questions <- c("PFSQ25", "PFSQ21", "PFSQ22", "PFSQ15", "PFSQ13", "PFSQ2")
+emotional_questions <- c("PFSQ25", "PFSQ21", "PFSQ15", "PFSQ13", "PFSQ2")
 picky_questions <- c("CEBQ32", "CEBQ24", "CEBQ16", "CEBQ10", "CEBQ7")
 
 # Convert text responses to numeric values and calculate mean scores for control, emotional eating, and picky eating
